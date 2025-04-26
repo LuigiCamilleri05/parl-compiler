@@ -1,1 +1,1 @@
-testing shit
+This the the README for Compiler Thoery and Practice
