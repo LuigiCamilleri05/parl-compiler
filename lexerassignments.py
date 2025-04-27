@@ -17,7 +17,7 @@ class Token:
 #Lexer class wrapper for code above
 class Lexer:
     def __init__(self):
-        self.lexeme_list = ["_", "letter", "digit", "ws", "eq", "sc", "other"]
+        self.lexeme_list = ["_", "letter", "digit", "eq", "sc", "other"]
         self.states_list = [0, 1, 2, 3, 4, 5]
         self.states_accp = [1, 2, 3, 4, 5]
 
@@ -35,10 +35,6 @@ class Lexer:
         self.Tx[0][self.lexeme_list.index("_")] = 1
         self.Tx[1][self.lexeme_list.index("letter")] = 1
         self.Tx[1][self.lexeme_list.index("digit")] = 1
-
-        #White Space
-        self.Tx[0][self.lexeme_list.index("ws")] = 2
-        self.Tx[2][self.lexeme_list.index("ws")] = 2
 
         #Eq sign (=)
         self.Tx[0][self.lexeme_list.index("eq")] = 3        
@@ -80,7 +76,6 @@ class Lexer:
         if character.isalpha(): cat = "letter"
         if character.isdigit(): cat = "digit"
         if character == "_": cat = "_"
-        if character == " ": cat = "ws"
         if character == ";": cat = "sc"
         if character == "=": cat = "eq"
         return cat
@@ -90,6 +85,11 @@ class Lexer:
             return True;
         else:
             return False;
+
+    def SkipWhitespace(self, src_program_str, src_program_idx):
+        while src_program_idx < len(src_program_str) and src_program_str[src_program_idx] in [' ', '\t', '\n', '\r']:
+            src_program_idx += 1
+        return src_program_idx
 
     def NextChar(self, src_program_str, src_program_idx):
         if (not self.EndOfInput(src_program_str, src_program_idx)):
@@ -102,6 +102,8 @@ class Lexer:
         stack = []
         lexeme = ""
         stack.append(-2);  #insert the error state at the bottom of the stack.
+
+        src_program_idx = self.SkipWhitespace(src_program_str, src_program_idx) #skip whitespace
 
         #if at end of input return the end token
         if self.EndOfInput(src_program_str, src_program_idx):
