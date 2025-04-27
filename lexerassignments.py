@@ -23,8 +23,40 @@ class TokenType(Enum):
     comma = 19
     hash = 20
     dot = 21
-    error = 22
-    end = 23
+    floatliteral = 22
+    booleanliteral = 23
+    colourliteral = 24
+    kw_let = 25
+    kw_fun = 26
+    kw_if = 27
+    kw_else = 28
+    kw_for = 29
+    kw_while = 30
+    kw_return = 31
+    kw_as = 32
+    kw_not = 33
+    kw_and = 34
+    kw_or = 35
+    kw_float = 36
+    kw_int = 37
+    kw_bool = 38
+    kw_colour = 39
+    kw__print = 40
+    kw__delay = 41
+    kw__write = 42
+    kw__write_box = 43
+    kw__random_int = 44
+    kw__read = 45
+    kw__width = 46
+    kw__height = 47
+    equal_equal = 48     
+    not_equal = 49       
+    less_equal = 50      
+    greater_equal = 51   
+    arrow = 52           
+    error = 53
+    end = 54
+    whitespace = 55
 
 
 class Token:
@@ -39,9 +71,9 @@ class Lexer:
                             "multiply", "slash", "equals", "less", "greater", 
                             "excl", "lparen", "rparen", "lbrace", "rbrace",
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
-                            "hash", "dot","other"]
-        self.states_list = list(range(22))
-        self.states_accp = list(range(1, 22))   
+                            "hash", "dot","whitespace","other"]
+        self.states_list = list(range(23))
+        self.states_accp = list(range(1, 23))   
 
         self.rows = len(self.states_list)
         self.cols = len(self.lexeme_list)
@@ -83,6 +115,8 @@ class Lexer:
         self.Tx[0][self.lexeme_list.index("hash")] = 20
         self.Tx[0][self.lexeme_list.index("dot")] = 21
 
+        self.Tx[0][self.lexeme_list.index("whitespace")] = 22
+
         for row in self.Tx:
             print(row)
 
@@ -95,7 +129,12 @@ class Lexer:
 
     def GetTokenTypeByFinalState(self, state, lexeme):
         if state == 1:
-            return Token(TokenType.identifier, lexeme)
+            if lexeme in self.keywords:
+                return Token(self.keywords[lexeme], lexeme)
+            elif lexeme in ["true", "false"]:
+                return Token(TokenType.booleanliteral, lexeme)
+            else:
+                return Token(TokenType.identifier, lexeme)
         elif state == 2:
             return Token(TokenType.integer, lexeme)
         elif state == 3:
@@ -136,10 +175,10 @@ class Lexer:
             return Token(TokenType.hash, lexeme)
         elif state == 21:
             return Token(TokenType.dot, lexeme)
+        elif state == 22:
+            return Token(TokenType.whitespace, lexeme)
         else:
             return Token(TokenType.error, lexeme)
-
-
 
     def CatChar(self, character):
 
@@ -191,6 +230,8 @@ class Lexer:
             return "hash"
         elif  character == ".":
             return "dot"
+        elif character in [' ', '\t', '\n', '\r']:
+            return "whitespace"
         else:
             return "other"
 
@@ -199,11 +240,6 @@ class Lexer:
             return True;
         else:
             return False;
-
-    def SkipWhitespace(self, src_program_str, src_program_idx):
-        while src_program_idx < len(src_program_str) and src_program_str[src_program_idx] in [' ', '\t', '\n', '\r']:
-            src_program_idx += 1
-        return src_program_idx
 
     def NextChar(self, src_program_str, src_program_idx):
         if (not self.EndOfInput(src_program_str, src_program_idx)):
@@ -216,8 +252,6 @@ class Lexer:
         stack = []
         lexeme = ""
         stack.append(-2);  #insert the error state at the bottom of the stack.
-
-        src_program_idx = self.SkipWhitespace(src_program_str, src_program_idx) #skip whitespace
 
         #if at end of input return the end token
         if self.EndOfInput(src_program_str, src_program_idx):
@@ -280,7 +314,7 @@ class Lexer:
         while (token != TokenType.end):  #this loop is simulating the Parser asking for the next token
             src_program_idx = src_program_idx + len(lexeme)    
             token, lexeme = self.NextToken(src_program_str, src_program_idx)
-            tokens_list.append(token);
+            tokens_list.append(token)
             print ("Nxt TOKEN: ", token.type, " ", lexeme, "(", len(lexeme), ")  => IDX: ", src_program_idx)
             if (token.type == TokenType.error):
                 break; #A Lexical error was encountered
@@ -292,9 +326,34 @@ class Lexer:
             print("Encountered end of Input token!! Done")
         
         return tokens_list;
+    keywords = {
+        "let": TokenType.kw_let,
+        "fun": TokenType.kw_fun,
+        "if": TokenType.kw_if,
+        "else": TokenType.kw_else,
+        "for": TokenType.kw_for,
+        "while": TokenType.kw_while,
+        "return": TokenType.kw_return,
+        "as": TokenType.kw_as,
+        "not": TokenType.kw_not,
+        "and": TokenType.kw_and,
+        "or": TokenType.kw_or,
+        "float": TokenType.kw_float,
+        "int": TokenType.kw_int,
+        "bool": TokenType.kw_bool,
+        "colour": TokenType.kw_colour,
+        "_print": TokenType.kw__print,
+        "_delay": TokenType.kw__delay,
+        "_write": TokenType.kw__write,
+        "_write_box": TokenType.kw__write_box,
+        "_random_int": TokenType.kw__random_int,
+        "_read": TokenType.kw__read,
+        "_width": TokenType.kw__width,
+        "_height": TokenType.kw__height
+    }
 
 lex = Lexer()
-toks = lex.GenerateTokens("x=5+3-2*4/2<10>1!=0;(arr[2]){key:value,next:item#123.456;}")
+toks = lex.GenerateTokens(" 5 let 3 true false 3.5 3.14 3.14e-2 3.14E+2 3.14e+2 3.14E-")
 
 for t in toks:
     print(t.type, t.lexeme)
