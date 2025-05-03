@@ -72,8 +72,8 @@ class Lexer:
                             "excl", "lparen", "rparen", "lbrace", "rbrace",
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
                             "hash", "dot","whitespace","other"]
-        self.states_list = list(range(60))  # or max used state + 1
-        self.states_accp = list(range(1, 23)) + [29, 32, 48, 49, 50, 51, 52]
+        self.states_list = list(range(70))  # or max used state + 1
+        self.states_accp = list(range(1, 23)) + [29, 32, 48, 49, 50, 51, 52, 58]
 
         self.rows = len(self.states_list)
         self.cols = len(self.lexeme_list)
@@ -137,6 +137,27 @@ class Lexer:
         
         # Arrow operator (->)
         self.Tx[6][self.lexeme_list.index("greater")] = 52  # ->
+
+        # After seeing #
+        self.Tx[20][self.lexeme_list.index("digit")] = 53
+        self.Tx[20][self.lexeme_list.index("letter")] = 53
+
+        self.Tx[53][self.lexeme_list.index("digit")] = 54
+        self.Tx[53][self.lexeme_list.index("letter")] = 54
+
+        self.Tx[54][self.lexeme_list.index("digit")] = 55
+        self.Tx[54][self.lexeme_list.index("letter")] = 55
+
+        self.Tx[55][self.lexeme_list.index("digit")] = 56
+        self.Tx[55][self.lexeme_list.index("letter")] = 56
+
+        self.Tx[56][self.lexeme_list.index("digit")] = 57
+        self.Tx[56][self.lexeme_list.index("letter")] = 57
+
+        self.Tx[57][self.lexeme_list.index("digit")] = 58
+        self.Tx[57][self.lexeme_list.index("letter")] = 58
+
+        
 
         for row in self.Tx:
             print(row)
@@ -215,6 +236,8 @@ class Lexer:
         elif state == 52:
             return Token(TokenType.arrow, lexeme)
         
+        elif state == 58:
+            return Token(TokenType.colourliteral, lexeme)
         
         else:
             return Token(TokenType.error, lexeme)
@@ -392,7 +415,7 @@ class Lexer:
     }
 
 lex = Lexer()
-toks = lex.GenerateTokens(" 5 let 3 __print ")
+toks = lex.GenerateTokens(" #ff00FF #123abc #AB12EF") 
 
 for t in toks:
     print(t.type, t.lexeme)
