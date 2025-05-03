@@ -72,8 +72,8 @@ class Lexer:
                             "excl", "lparen", "rparen", "lbrace", "rbrace",
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
                             "hash", "dot","whitespace","other"]
-        self.states_list = list(range(23))
-        self.states_accp = list(range(1, 23))   
+        self.states_list = list(range(60))  # or max used state + 1
+        self.states_accp = list(range(1, 23)) + [29, 32, 48, 49, 50, 51, 52]
 
         self.rows = len(self.states_list)
         self.cols = len(self.lexeme_list)
@@ -116,6 +116,27 @@ class Lexer:
         self.Tx[0][self.lexeme_list.index("dot")] = 21
 
         self.Tx[0][self.lexeme_list.index("whitespace")] = 22
+
+        # Floats
+        self.Tx[2][self.lexeme_list.index("dot")] = 28     # 3.
+        self.Tx[28][self.lexeme_list.index("digit")] = 29  # 3.1
+        self.Tx[29][self.lexeme_list.index("digit")] = 29  # 3.14
+        self.Tx[29][self.lexeme_list.index("letter")] = 30  # e or E
+        self.Tx[30][self.lexeme_list.index("plus")] = 31   # e+
+        self.Tx[30][self.lexeme_list.index("minus")] = 31  # e-
+        self.Tx[30][self.lexeme_list.index("digit")] = 32  # e2
+        self.Tx[31][self.lexeme_list.index("digit")] = 32  # +2 or -2
+        self.Tx[32][self.lexeme_list.index("digit")] = 32  # 2 -> 22
+        self.Tx[32][self.lexeme_list.index("letter")] = 32  # e or E
+
+        # Compound operators (==, !=, <=, >=)
+        self.Tx[3][self.lexeme_list.index("equals")] = 48  # ==
+        self.Tx[11][self.lexeme_list.index("equals")] = 49 # !=
+        self.Tx[9][self.lexeme_list.index("equals")] = 50  # <=
+        self.Tx[10][self.lexeme_list.index("equals")] = 51 # >=
+        
+        # Arrow operator (->)
+        self.Tx[6][self.lexeme_list.index("greater")] = 52  # ->
 
         for row in self.Tx:
             print(row)
@@ -177,6 +198,24 @@ class Lexer:
             return Token(TokenType.dot, lexeme)
         elif state == 22:
             return Token(TokenType.whitespace, lexeme)
+                # Floats
+        elif state == 29 or state == 32 or state == 33:
+            return Token(TokenType.floatliteral, lexeme)
+
+        # Compound operators
+        elif state == 48:
+            return Token(TokenType.equal_equal, lexeme)
+        elif state == 49:
+            return Token(TokenType.not_equal, lexeme)
+        elif state == 50:
+            return Token(TokenType.less_equal, lexeme)
+        elif state == 51:
+            return Token(TokenType.greater_equal, lexeme)
+        # Arrow operator
+        elif state == 52:
+            return Token(TokenType.arrow, lexeme)
+        
+        
         else:
             return Token(TokenType.error, lexeme)
 
@@ -342,18 +381,18 @@ class Lexer:
         "int": TokenType.kw_int,
         "bool": TokenType.kw_bool,
         "colour": TokenType.kw_colour,
-        "_print": TokenType.kw__print,
-        "_delay": TokenType.kw__delay,
-        "_write": TokenType.kw__write,
-        "_write_box": TokenType.kw__write_box,
-        "_random_int": TokenType.kw__random_int,
-        "_read": TokenType.kw__read,
-        "_width": TokenType.kw__width,
-        "_height": TokenType.kw__height
+        "__print": TokenType.kw__print,
+        "__delay": TokenType.kw__delay,
+        "__write": TokenType.kw__write,
+        "__write_box": TokenType.kw__write_box,
+        "__random_int": TokenType.kw__random_int,
+        "__read": TokenType.kw__read,
+        "__width": TokenType.kw__width,
+        "__height": TokenType.kw__height
     }
 
 lex = Lexer()
-toks = lex.GenerateTokens(" 5 let 3 true false 3.5 3.14 3.14e-2 3.14E+2 3.14e+2 3.14E-")
+toks = lex.GenerateTokens(" 5 let 3 __print ")
 
 for t in toks:
     print(t.type, t.lexeme)
