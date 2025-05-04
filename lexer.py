@@ -1,4 +1,4 @@
-#Class to wrap the different tokens we'll be using
+# Lexer for 
 from enum import Enum
 
 class TokenType(Enum):
@@ -173,6 +173,9 @@ class Lexer:
             if lex != "multiply":
                 self.Tx[42][i] = 42
         self.Tx[42][self.lexeme_list.index("multiply")] = 43
+        for i, lex in enumerate(self.lexeme_list):
+            if lex != "slash":
+                self.Tx[43][i] = 42
         self.Tx[43][self.lexeme_list.index("slash")] = 44
 
         for row in self.Tx:
@@ -430,7 +433,7 @@ class Lexer:
 lex = Lexer()
 toks = lex.GenerateTokens("""let x = 5 // this is a line comment
 let y = 10 /* this is a
-multi-line
+* multi-line
 block comment */ let z = 15""") 
 
 for t in toks:
