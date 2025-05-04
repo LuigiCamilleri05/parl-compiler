@@ -354,8 +354,11 @@ class Lexer:
             exists, character = self.NextChar(src_program_str, src_program_idx);
             lexeme += character
             if (not exists): 
-                 
-                break  
+                if state == 40:
+                    character = "\n"
+                    exists = True
+                else:
+                    break  
             # Increments the index to get the next character
             src_program_idx = src_program_idx + 1
             
