@@ -57,9 +57,9 @@ class TokenType(Enum):
     error = 53
     end = 54
     whitespace = 55
-    linecomment = 59
-    blockcomment = 60
-    newline = 61
+    linecomment = 56
+    blockcomment = 57
+    newline = 58
 
 
 class Token:
@@ -67,16 +67,15 @@ class Token:
         self.type = t
         self.lexeme = l        
 
-#Lexer class wrapper for code above
 class Lexer:
     def __init__(self):
         self.lexeme_list = ["letter", "digit", "underscore", "plus", "minus",
                             "multiply", "slash", "equals", "less", "greater", 
                             "excl", "lparen", "rparen", "lbrace", "rbrace",
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
-                            "hash", "dot","whitespace","other", "newline",]
+                            "hash", "dot","whitespace", "newline", "other",]
         self.states_list = list(range(70))  
-        self.states_accp = list(range(1, 24)) + [29, 32, 48, 49, 50, 51, 52, 58, 61, 65]
+        self.states_accp = list(range(1, 24)) + [25, 28, 29, 30, 31, 32, 33, 39, 41, 44]
 
         self.rows = len(self.states_list)
         self.cols = len(self.lexeme_list)
@@ -121,63 +120,60 @@ class Lexer:
         self.Tx[0][self.lexeme_list.index("whitespace")] = 22
         self.Tx[0][self.lexeme_list.index("newline")] = 23
 
-        self.Tx[8][self.lexeme_list.index("slash")] = 60  
+        # Floats
+        self.Tx[2][self.lexeme_list.index("dot")] = 24     
+        self.Tx[24][self.lexeme_list.index("digit")] = 25  
+        self.Tx[25][self.lexeme_list.index("digit")] = 25  
+        self.Tx[25][self.lexeme_list.index("letter")] = 26 
+        self.Tx[26][self.lexeme_list.index("plus")] = 27   
+        self.Tx[26][self.lexeme_list.index("minus")] = 27  
+        self.Tx[26][self.lexeme_list.index("digit")] = 28 
+        self.Tx[27][self.lexeme_list.index("digit")] = 28  
+        self.Tx[28][self.lexeme_list.index("digit")] = 28 
+        self.Tx[28][self.lexeme_list.index("letter")] = 28  
 
+        # Compound operators 
+        self.Tx[3][self.lexeme_list.index("equals")] = 29  
+        self.Tx[11][self.lexeme_list.index("equals")] = 30 
+        self.Tx[9][self.lexeme_list.index("equals")] = 31  
+        self.Tx[10][self.lexeme_list.index("equals")] = 32 
         
+        # Arrow operator 
+        self.Tx[6][self.lexeme_list.index("greater")] = 33  
+
+        # After #
+        self.Tx[20][self.lexeme_list.index("digit")] = 34
+        self.Tx[20][self.lexeme_list.index("letter")] = 34
+
+        self.Tx[34][self.lexeme_list.index("digit")] = 35
+        self.Tx[34][self.lexeme_list.index("letter")] = 35
+
+        self.Tx[35][self.lexeme_list.index("digit")] = 36
+        self.Tx[35][self.lexeme_list.index("letter")] = 36
+
+        self.Tx[36][self.lexeme_list.index("digit")] = 37
+        self.Tx[36][self.lexeme_list.index("letter")] = 37
+
+        self.Tx[37][self.lexeme_list.index("digit")] = 38
+        self.Tx[37][self.lexeme_list.index("letter")] = 38
+
+        self.Tx[38][self.lexeme_list.index("digit")] = 39
+        self.Tx[38][self.lexeme_list.index("letter")] = 39
+
+        self.Tx[8][self.lexeme_list.index("slash")] = 40  
+
         for i, lex in enumerate(self.lexeme_list):
             if lex != "newline":
-                self.Tx[60][i] = 60
-        self.Tx[60][self.lexeme_list.index("newline")] = 61  
+                self.Tx[40][i] = 40
+        self.Tx[40][self.lexeme_list.index("newline")] = 41  
 
-        self.Tx[8][self.lexeme_list.index("multiply")] = 63  
+        self.Tx[8][self.lexeme_list.index("multiply")] = 42  
         
         for i, lex in enumerate(self.lexeme_list):
             if lex != "multiply":
-                self.Tx[63][i] = 63
-        self.Tx[63][self.lexeme_list.index("multiply")] = 64
-        self.Tx[64][self.lexeme_list.index("slash")] = 65  
-
-        # Floats
-        self.Tx[2][self.lexeme_list.index("dot")] = 28     
-        self.Tx[28][self.lexeme_list.index("digit")] = 29  
-        self.Tx[29][self.lexeme_list.index("digit")] = 29  
-        self.Tx[29][self.lexeme_list.index("letter")] = 30 
-        self.Tx[30][self.lexeme_list.index("plus")] = 31   
-        self.Tx[30][self.lexeme_list.index("minus")] = 31  
-        self.Tx[30][self.lexeme_list.index("digit")] = 32 
-        self.Tx[31][self.lexeme_list.index("digit")] = 32  
-        self.Tx[32][self.lexeme_list.index("digit")] = 32 
-        self.Tx[32][self.lexeme_list.index("letter")] = 32  
-
-        # Compound operators 
-        self.Tx[3][self.lexeme_list.index("equals")] = 48  
-        self.Tx[11][self.lexeme_list.index("equals")] = 49 
-        self.Tx[9][self.lexeme_list.index("equals")] = 50  
-        self.Tx[10][self.lexeme_list.index("equals")] = 51 
-        
-        # Arrow operator 
-        self.Tx[6][self.lexeme_list.index("greater")] = 52  
-
-        # After #
-        self.Tx[20][self.lexeme_list.index("digit")] = 53
-        self.Tx[20][self.lexeme_list.index("letter")] = 53
-
-        self.Tx[53][self.lexeme_list.index("digit")] = 54
-        self.Tx[53][self.lexeme_list.index("letter")] = 54
-
-        self.Tx[54][self.lexeme_list.index("digit")] = 55
-        self.Tx[54][self.lexeme_list.index("letter")] = 55
-
-        self.Tx[55][self.lexeme_list.index("digit")] = 56
-        self.Tx[55][self.lexeme_list.index("letter")] = 56
-
-        self.Tx[56][self.lexeme_list.index("digit")] = 57
-        self.Tx[56][self.lexeme_list.index("letter")] = 57
-
-        self.Tx[57][self.lexeme_list.index("digit")] = 58
-        self.Tx[57][self.lexeme_list.index("letter")] = 58
-
-        
+                self.Tx[42][i] = 42
+        self.Tx[42][self.lexeme_list.index("multiply")] = 43
+        self.Tx[43][self.lexeme_list.index("slash")] = 44
 
         for row in self.Tx:
             print(row)
@@ -241,28 +237,28 @@ class Lexer:
             return Token(TokenType.whitespace, lexeme)
         elif state == 23:
             return Token(TokenType.newline, lexeme)
-        elif state == 29 or state == 32 or state == 33:
+        elif state == 25 or state == 28:
             return Token(TokenType.floatliteral, lexeme)
 
         # Compound operators
-        elif state == 48:
+        elif state == 29:
             return Token(TokenType.equal_equal, lexeme)
-        elif state == 49:
+        elif state == 30:
             return Token(TokenType.not_equal, lexeme)
-        elif state == 50:
+        elif state == 31:
             return Token(TokenType.less_equal, lexeme)
-        elif state == 51:
+        elif state == 32:
             return Token(TokenType.greater_equal, lexeme)
         
         # Arrow operator
-        elif state == 52:
+        elif state == 33:
             return Token(TokenType.arrow, lexeme)
         
-        elif state == 58:
+        elif state == 39:
             return Token(TokenType.colourliteral, lexeme)
-        elif state == 61:
+        elif state == 41:
             return Token(TokenType.linecomment, lexeme)
-        elif state == 65:
+        elif state == 44:
             return Token(TokenType.blockcomment, lexeme)
     
         else:
@@ -432,7 +428,10 @@ class Lexer:
     }
 
 lex = Lexer()
-toks = lex.GenerateTokens("3.532 +, 3.14 * 2.5; let x = 3; let y = 4; let z = x + y; if (x < y) { z = x + y; } else { z = x - y; } # This is a comment\n") 
+toks = lex.GenerateTokens("""let x = 5 // this is a line comment
+let y = 10 /* this is a
+multi-line
+block comment */ let z = 15""") 
 
 for t in toks:
     print(t.type, t.lexeme)
