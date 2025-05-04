@@ -57,6 +57,9 @@ class TokenType(Enum):
     error = 53
     end = 54
     whitespace = 55
+    linecomment = 59
+    blockcomment = 60
+    newline = 61
 
 
 class Token:
@@ -71,9 +74,9 @@ class Lexer:
                             "multiply", "slash", "equals", "less", "greater", 
                             "excl", "lparen", "rparen", "lbrace", "rbrace",
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
-                            "hash", "dot","whitespace","other"]
+                            "hash", "dot","whitespace","other", "newline",]
         self.states_list = list(range(70))  # or max used state + 1
-        self.states_accp = list(range(1, 23)) + [29, 32, 48, 49, 50, 51, 52, 58]
+        self.states_accp = list(range(1, 24)) + [29, 32, 48, 49, 50, 51, 52, 58, 61, 65]
 
         self.rows = len(self.states_list)
         self.cols = len(self.lexeme_list)
@@ -116,6 +119,23 @@ class Lexer:
         self.Tx[0][self.lexeme_list.index("dot")] = 21
 
         self.Tx[0][self.lexeme_list.index("whitespace")] = 22
+        self.Tx[0][self.lexeme_list.index("newline")] = 23
+
+        self.Tx[8][self.lexeme_list.index("slash")] = 60  # start of line comment
+
+        # Stay in line comment until newline
+        for i, lex in enumerate(self.lexeme_list):
+            if lex != "newline":
+                self.Tx[60][i] = 60
+        self.Tx[60][self.lexeme_list.index("newline")] = 61  # end of line comment
+
+        self.Tx[8][self.lexeme_list.index("multiply")] = 63  # start of block comment
+        # Stay in block comment
+        for i, lex in enumerate(self.lexeme_list):
+            if lex != "multiply":
+                self.Tx[63][i] = 63
+        self.Tx[63][self.lexeme_list.index("multiply")] = 64
+        self.Tx[64][self.lexeme_list.index("slash")] = 65  # end of block comment
 
         # Floats
         self.Tx[2][self.lexeme_list.index("dot")] = 28     # 3.
@@ -219,6 +239,9 @@ class Lexer:
             return Token(TokenType.dot, lexeme)
         elif state == 22:
             return Token(TokenType.whitespace, lexeme)
+        elif state == 23:
+            return Token(TokenType.newline, lexeme)
+        
                 # Floats
         elif state == 29 or state == 32 or state == 33:
             return Token(TokenType.floatliteral, lexeme)
@@ -238,6 +261,10 @@ class Lexer:
         
         elif state == 58:
             return Token(TokenType.colourliteral, lexeme)
+        elif state == 61:
+            return Token(TokenType.linecomment, lexeme)
+        elif state == 65:
+            return Token(TokenType.blockcomment, lexeme)
         
         else:
             return Token(TokenType.error, lexeme)
@@ -292,8 +319,10 @@ class Lexer:
             return "hash"
         elif  character == ".":
             return "dot"
-        elif character in [' ', '\t', '\n', '\r']:
+        elif character in [' ', '\t', '\r']:
             return "whitespace"
+        elif character == "\n":
+            return "newline"
         else:
             return "other"
 
@@ -415,7 +444,10 @@ class Lexer:
     }
 
 lex = Lexer()
-toks = lex.GenerateTokens(" #ff00FF #123abc #AB12EF") 
+toks = lex.GenerateTokens("""let x = 5 // this is a line comment
+let y = 10 /* this is a
+multi-line
+block comment */ let z = 15""") 
 
 for t in toks:
     print(t.type, t.lexeme)
