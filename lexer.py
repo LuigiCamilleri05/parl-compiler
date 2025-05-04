@@ -387,28 +387,7 @@ class Lexer:
         else: 
             return Token(TokenType.error, "error"), "error"
 
-    # Generates tokens from the input string
-    def GenerateTokens(self, src_program_str):
-        print("INPUT:: " + src_program_str)
-        tokens_list = []
-        src_program_idx = 0;
-        token, lexeme = self.NextToken(src_program_str, src_program_idx)
-        tokens_list.append(token);
-
-        while (token != TokenType.end):  
-            src_program_idx = src_program_idx + len(lexeme)    
-            token, lexeme = self.NextToken(src_program_str, src_program_idx)
-            tokens_list.append(token)
-            print ("Nxt TOKEN: ", token.type, " ", lexeme, "(", len(lexeme), ")  => IDX: ", src_program_idx)
-            if (token.type == TokenType.error):
-                break; 
-            if (token.type == TokenType.end):
-                break; 
-        if (token.type == TokenType.end):
-            print("Encountered end of Input token!! Done")
-        
-        return tokens_list;
-
+    
     # List of keywords in PArl
     keywords = {
         "let": TokenType.kw_let,
@@ -435,12 +414,3 @@ class Lexer:
         "__width": TokenType.kw__width,
         "__height": TokenType.kw__height
     }
-
-lex = Lexer()
-toks = lex.GenerateTokens("""let x = 5 // this is a line comment
-let y = 10 /* this is a
-* multi-line
-block comment */ let z = 15""") 
-
-for t in toks:
-    print(t.type, t.lexeme)
