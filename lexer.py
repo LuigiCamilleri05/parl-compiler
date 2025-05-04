@@ -1,6 +1,9 @@
-# Lexer for 
+# Lexer for PArl programming language
+
+# enum for token types
 from enum import Enum
 
+# TokenType enum represents different token types
 class TokenType(Enum):
     identifier = 1
     integer = 2
@@ -61,126 +64,112 @@ class TokenType(Enum):
     blockcomment = 57
     newline = 58
 
-
+# Token class represents a token with its type and lexeme
 class Token:
     def __init__(self, t, l):
         self.type = t
         self.lexeme = l        
 
+# Lexer class handles the lexical analysis of the input
 class Lexer:
     def __init__(self):
+        # Initializes the chcaracter categories
         self.lexeme_list = ["letter", "digit", "underscore", "plus", "minus",
                             "multiply", "slash", "equals", "less", "greater", 
                             "excl", "lparen", "rparen", "lbrace", "rbrace",
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
                             "hash", "dot","whitespace", "newline", "other",]
-        self.states_list = list(range(70))  
-        self.states_accp = list(range(1, 24)) + [25, 28, 29, 30, 31, 32, 33, 39, 41, 44]
+        # Initializes the states and accepting states
+        self.states_list = list(range(45))  
+        self.states_accp = list(range(1, 24)) + [25] + list(range(28, 34)) + [39, 41, 44]
 
+        # Initializes the transition table
         self.rows = len(self.states_list)
         self.cols = len(self.lexeme_list)
-
-        
         self.Tx = [[-1 for j in range(self.cols)] for i in range(self.rows)]
         self.InitialiseTxTable();     
 
+
     def InitialiseTxTable(self):
-        
-        self.Tx[0][self.lexeme_list.index("letter")] = 1
-        self.Tx[0][self.lexeme_list.index("underscore")] = 1
-        self.Tx[1][self.lexeme_list.index("letter")] = 1
-        self.Tx[1][self.lexeme_list.index("digit")] = 1
-        self.Tx[1][self.lexeme_list.index("underscore")] = 1
+        def set_tx(s, l, n):
+            self.Tx[s][self.lexeme_list.index(l)] = n
 
-        
-        self.Tx[0][self.lexeme_list.index("digit")] = 2
-        self.Tx[2][self.lexeme_list.index("digit")] = 2
+        # Identifiers
+        for l in ["letter", "underscore"]:
+            set_tx(0, l, 1)
+            set_tx(1, l, 1)
+        set_tx(1, "digit", 1)
 
-        
-        self.Tx[0][self.lexeme_list.index("equals")] = 3
-        self.Tx[0][self.lexeme_list.index("semicolon")] = 4
-        self.Tx[0][self.lexeme_list.index("plus")] = 5
-        self.Tx[0][self.lexeme_list.index("minus")] = 6
-        self.Tx[0][self.lexeme_list.index("multiply")] = 7
-        self.Tx[0][self.lexeme_list.index("slash")] = 8
-        self.Tx[0][self.lexeme_list.index("less")] = 9
-        self.Tx[0][self.lexeme_list.index("greater")] = 10
-        self.Tx[0][self.lexeme_list.index("excl")] = 11
-        self.Tx[0][self.lexeme_list.index("lparen")] = 12
-        self.Tx[0][self.lexeme_list.index("rparen")] = 13
-        self.Tx[0][self.lexeme_list.index("lbrace")] = 14
-        self.Tx[0][self.lexeme_list.index("rbrace")] = 15
-        self.Tx[0][self.lexeme_list.index("lbracket")] = 16
-        self.Tx[0][self.lexeme_list.index("rbracket")] = 17
-        self.Tx[0][self.lexeme_list.index("colon")] = 18
-        self.Tx[0][self.lexeme_list.index("comma")] = 19
-        self.Tx[0][self.lexeme_list.index("hash")] = 20
-        self.Tx[0][self.lexeme_list.index("dot")] = 21
+        # Integers
+        set_tx(0, "digit", 2)
+        set_tx(2, "digit", 2)
 
-        self.Tx[0][self.lexeme_list.index("whitespace")] = 22
-        self.Tx[0][self.lexeme_list.index("newline")] = 23
+        # Operators and Symbols
+        ops = {
+            "equals": 3, "semicolon": 4, "plus": 5, "minus": 6,
+            "multiply": 7, "slash": 8, "less": 9, "greater": 10,
+            "excl": 11, "lparen": 12, "rparen": 13, "lbrace": 14,
+            "rbrace": 15, "lbracket": 16, "rbracket": 17, "colon": 18,
+            "comma": 19, "hash": 20, "dot": 21, "whitespace": 22,
+            "newline": 23
+        }
+        # Loop through the operators and symbols and set the transitions
+        for key, val in ops.items():
+            set_tx(0, key, val)
 
         # Floats
-        self.Tx[2][self.lexeme_list.index("dot")] = 24     
-        self.Tx[24][self.lexeme_list.index("digit")] = 25  
-        self.Tx[25][self.lexeme_list.index("digit")] = 25  
-        self.Tx[25][self.lexeme_list.index("letter")] = 26 
-        self.Tx[26][self.lexeme_list.index("plus")] = 27   
-        self.Tx[26][self.lexeme_list.index("minus")] = 27  
-        self.Tx[26][self.lexeme_list.index("digit")] = 28 
-        self.Tx[27][self.lexeme_list.index("digit")] = 28  
-        self.Tx[28][self.lexeme_list.index("digit")] = 28 
-        self.Tx[28][self.lexeme_list.index("letter")] = 28  
+        set_tx(2, "dot", 24)
+        set_tx(24, "digit", 25)
+        set_tx(25, "digit", 25)
+        set_tx(25, "letter", 26)
+        # For floats with plus or minus sign
+        for l in ["plus", "minus"]:
+            set_tx(26, l, 27)
+        set_tx(26, "digit", 28)
+        set_tx(27, "digit", 28)
+        set_tx(28, "digit", 28)
+        set_tx(28, "letter", 28)
 
-        # Compound operators 
-        self.Tx[3][self.lexeme_list.index("equals")] = 29  
-        self.Tx[11][self.lexeme_list.index("equals")] = 30 
-        self.Tx[9][self.lexeme_list.index("equals")] = 31  
-        self.Tx[10][self.lexeme_list.index("equals")] = 32 
-        
-        # Arrow operator 
-        self.Tx[6][self.lexeme_list.index("greater")] = 33  
+        # Compound operators
+        set_tx(3, "equals", 29)
+        set_tx(11, "equals", 30)
+        set_tx(9, "equals", 31)
+        set_tx(10, "equals", 32)
 
-        # After #
-        self.Tx[20][self.lexeme_list.index("digit")] = 34
-        self.Tx[20][self.lexeme_list.index("letter")] = 34
+        # Arrow operator
+        set_tx(6, "greater", 33)
 
-        self.Tx[34][self.lexeme_list.index("digit")] = 35
-        self.Tx[34][self.lexeme_list.index("letter")] = 35
+        # Colour literals
+        set_tx(20, "digit", 34)
+        set_tx(20, "letter", 34)
+        # Since colour literals have a fixed length of 7
+        for i in range(34, 39):
+            set_tx(i, "digit", i + 1)
+            set_tx(i, "letter", i + 1)
 
-        self.Tx[35][self.lexeme_list.index("digit")] = 36
-        self.Tx[35][self.lexeme_list.index("letter")] = 36
-
-        self.Tx[36][self.lexeme_list.index("digit")] = 37
-        self.Tx[36][self.lexeme_list.index("letter")] = 37
-
-        self.Tx[37][self.lexeme_list.index("digit")] = 38
-        self.Tx[37][self.lexeme_list.index("letter")] = 38
-
-        self.Tx[38][self.lexeme_list.index("digit")] = 39
-        self.Tx[38][self.lexeme_list.index("letter")] = 39
-
-        self.Tx[8][self.lexeme_list.index("slash")] = 40  
-
+        # Line comments
+        set_tx(8, "slash", 40)
+        # Loops until the end of the line
         for i, lex in enumerate(self.lexeme_list):
             if lex != "newline":
                 self.Tx[40][i] = 40
-        self.Tx[40][self.lexeme_list.index("newline")] = 41  
+        set_tx(40, "newline", 41)
 
-        self.Tx[8][self.lexeme_list.index("multiply")] = 42  
-        
-        for i, lex in enumerate(self.lexeme_list):
-            if lex != "multiply":
-                self.Tx[42][i] = 42
-        self.Tx[42][self.lexeme_list.index("multiply")] = 43
-        for i, lex in enumerate(self.lexeme_list):
-            if lex != "slash":
-                self.Tx[43][i] = 42
-        self.Tx[43][self.lexeme_list.index("slash")] = 44
+        # Block comments
+        set_tx(8, "multiply", 42)
+        # Loops until the end of the it reaches a *, if there is a / after it, it will be a block comment
+        for i in range(len(self.lexeme_list)):
+            self.Tx[42][i] = 42
+        set_tx(42, "multiply", 43)
+        for i in range(len(self.lexeme_list)):
+            self.Tx[43][i] = 42
+        set_tx(43, "slash", 44)
 
+        # Shows output 
         for row in self.Tx:
             print(row)
 
+    # Checks if the state is an accepting state
     def AcceptingStates(self, state):
         try:
             self.states_accp.index(state)
@@ -188,8 +177,10 @@ class Lexer:
         except ValueError:
             return False;
 
+    # Returns the token based on the final state and lexeme
     def GetTokenTypeByFinalState(self, state, lexeme):
         if state == 1:
+            # Check if the lexeme is a keyword or identifier
             if lexeme in self.keywords:
                 return Token(self.keywords[lexeme], lexeme)
             elif lexeme in ["true", "false"]:
@@ -259,6 +250,8 @@ class Lexer:
         
         elif state == 39:
             return Token(TokenType.colourliteral, lexeme)
+        
+        # Comments
         elif state == 41:
             return Token(TokenType.linecomment, lexeme)
         elif state == 44:
@@ -317,6 +310,8 @@ class Lexer:
             return "hash"
         elif  character == ".":
             return "dot"
+        
+        # Whitespace and newlines
         elif character in [' ', '\t', '\r']:
             return "whitespace"
         elif character == "\n":
@@ -324,47 +319,56 @@ class Lexer:
         else:
             return "other"
 
+    # Checks if the end of the input is reached by comparing the index with the length of the string
     def EndOfInput(self, src_program_str, src_program_idx):
         if (src_program_idx > len(src_program_str)-1):
             return True;
         else:
             return False;
 
+    # Returns the next character in the input string and updates the index
     def NextChar(self, src_program_str, src_program_idx):
         if (not self.EndOfInput(src_program_str, src_program_idx)):
             return True, src_program_str[src_program_idx]
         else: 
-            return False, "."
+            return False, "." # . will be removed in lexeme[:-1]
 
+    # Gets the next token from the input string
     def NextToken(self, src_program_str, src_program_idx):
         state = 0  
         stack = []
         lexeme = ""
-        stack.append(-2);  
+        stack.append(-2); # -2 is a marker for the stack to indicate that it is empty 
         
         if self.EndOfInput(src_program_str, src_program_idx):
             return Token(TokenType.end, "end"), "end"
 
+        # -1 when the end of the input is reached or error is encountered
         while (state != -1):
+            # Checks if state is an accepting state and clears the stack if it is
             if self.AcceptingStates(state): 
                 stack.clear();
             stack.append(state);
             
+            # Gets the next character and adds it to the lexeme
             exists, character = self.NextChar(src_program_str, src_program_idx);
             lexeme += character
             if (not exists): 
                  
                 break  
+            # Increments the index to get the next character
             src_program_idx = src_program_idx + 1
             
+            # Returns the character label  
             cat = self.CatChar(character);
             state = self.Tx[state][self.lexeme_list.index(cat)];
             
-        
+        # Rmoves the last character from the lexeme
         lexeme = lexeme[:-1]
 
         syntax_error = False;
         
+        # Checks for errrs
         while (len(stack) > 0):
             if (stack[-1] == -2): 
                 syntax_error = True
@@ -383,7 +387,7 @@ class Lexer:
         else: 
             return Token(TokenType.error, "error"), "error"
 
-
+    # Generates tokens from the input string
     def GenerateTokens(self, src_program_str):
         print("INPUT:: " + src_program_str)
         tokens_list = []
@@ -404,6 +408,8 @@ class Lexer:
             print("Encountered end of Input token!! Done")
         
         return tokens_list;
+
+    # List of keywords in PArl
     keywords = {
         "let": TokenType.kw_let,
         "fun": TokenType.kw_fun,
