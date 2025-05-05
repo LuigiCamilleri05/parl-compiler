@@ -26,12 +26,71 @@ class Parser:
             self.NextTokenSkipWS_Comments()
                 
 
+    def ParseLiteral(self):
+        if self.crtToken.type == lex.TokenType.integer:
+            val = self.crtToken.lexeme
+            self.NextToken()
+            return ast.ASTIntegerNode(val)
+
+        elif self.crtToken.type == lex.TokenType.floatliteral:
+            val = self.crtToken.lexeme
+            self.NextToken()
+            return ast.ASTFloatNode(val)
+
+        elif self.crtToken.type == lex.TokenType.booleanliteral:
+            val = self.crtToken.lexeme
+            self.NextToken()
+            return ast.ASTBooleanNode(val)
+
+        elif self.crtToken.type == lex.TokenType.colourliteral:
+            val = self.crtToken.lexeme
+            self.NextToken()
+            return ast.ASTColourNode(val)
+
+        else:
+            raise Exception("Syntax Error: Expected a literal.")
+
     def ParseExpression(self):
-        #for now we'll assume an expression can only be an integer
-        if (self.crtToken.type == lex.TokenType.integer):
+        
+        # Delegate literal types
+        if self.crtToken.type in [
+            lex.TokenType.integer,
+            lex.TokenType.floatliteral,
+            lex.TokenType.booleanliteral,
+            lex.TokenType.colourliteral
+        ]:
+            return self.ParseLiteral()
+
+        if self.crtToken.type == lex.TokenType.kw__width:
+            self.NextToken()
+            return ast.ASTPadWidthNode()
+
+        elif self.crtToken.type == lex.TokenType.kw__height:
+            self.NextToken()
+            return ast.ASTPadHeightNode()
+
+        elif self.crtToken.type == lex.TokenType.identifier:
             value = self.crtToken.lexeme
             self.NextToken()
-            return ast.ASTIntegerNode(value)
+            return ast.ASTVariableNode(value)
+        elif self.crtToken.type == lex.TokenType.kw__read:
+            self.NextToken()
+            expr1 = self.ParseExpression()
+            if self.crtToken.type != lex.TokenType.comma:
+                print("Syntax Error: expected ',' after first expression in __read")
+                return ast.ASTErrorNode()
+            self.NextToken()
+            expr2 = self.ParseExpression()
+            return ast.ASTPadReadNode(expr1, expr2)
+
+        elif self.crtToken.type == lex.TokenType.kw__random_int:
+            self.NextToken()
+            expr = self.ParseExpression()
+            return ast.ASTPadRandINode(expr)
+
+        else:
+            print(f"Syntax error: Unexpected token {self.crtToken.type}")
+            return None
 
     def ParseAssignment(self):
         #Assignment is made up of two main parts; the LHS (the variable) and RHS (the expression)
@@ -81,7 +140,7 @@ class Parser:
         self.ASTroot = self.ParseProgram()
 
 
-parser = Parser("     x=   23 ; y=  100;  z = 23 ;")
+parser = Parser(("x = __read 5, 10; y = __random_int 7;"))
 parser.Parse()
 
 print_visitor = ast.PrintNodesVisitor()
