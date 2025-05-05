@@ -72,7 +72,16 @@ class Parser:
         elif self.crtToken.type == lex.TokenType.identifier:
             value = self.crtToken.lexeme
             self.NextToken()
+             # Check if it’s an indexed identifier
+            if self.crtToken.type == lex.TokenType.lbracket:
+                self.NextToken()
+                index_expr = self.ParseExpression()
+                if self.crtToken.type != lex.TokenType.rbracket:
+                    raise Exception("Syntax Error: expected ']' after index expression")
+                self.NextToken()
+                return ast.ASTVariableNode(value, index_expr)
             return ast.ASTVariableNode(value)
+        
         elif self.crtToken.type == lex.TokenType.kw__read:
             self.NextToken()
             expr1 = self.ParseExpression()
@@ -96,7 +105,9 @@ class Parser:
         #Assignment is made up of two main parts; the LHS (the variable) and RHS (the expression)
         if (self.crtToken.type == lex.TokenType.identifier):
             #create AST node to store the identifier            
-            assignment_lhs = ast.ASTVariableNode(self.crtToken.lexeme)
+            assignment_lhs = self.ParseExpression()
+            if not isinstance(assignment_lhs, ast.ASTVariableNode):
+                raise Exception("Syntax Error: Left-hand side must be a variable")
             self.NextToken()
             #print("Variable Token Matched ::: Nxt Token is ", self.crtToken.type, self.crtToken.lexeme)
 
@@ -140,7 +151,7 @@ class Parser:
         self.ASTroot = self.ParseProgram()
 
 
-parser = Parser(("x = __read 5, 10; y = __random_int 7;"))
+parser = Parser(("arr[2] = __width;"))
 parser.Parse()
 
 print_visitor = ast.PrintNodesVisitor()

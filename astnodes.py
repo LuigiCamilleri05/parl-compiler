@@ -12,9 +12,10 @@ class ASTExpressionNode(ASTNode):
         self.name = "ASTExpressionNode"
 
 class ASTVariableNode(ASTExpressionNode):
-    def __init__(self, lexeme):
+    def __init__(self, lexeme, index_expr=None):
         self.name = "ASTVariableNode"
         self.lexeme = lexeme
+        self.index_expr = index_expr
 
     def accept(self, visitor):
         visitor.visit_variable_node(self)
@@ -174,6 +175,11 @@ class PrintNodesVisitor(ASTVisitor):
     def visit_variable_node(self, var_node):
         self.node_count += 1
         print('\t' * self.tab_count, "Variable => ", var_node.lexeme)
+        if var_node.index_expr:
+            self.tab_count += 1
+            print('\t' * self.tab_count, "Index Expression =>")
+            var_node.index_expr.accept(self)
+            self.tab_count -= 1
 
     def visit_float_node(self, float_node):
         self.node_count += 1
