@@ -5,19 +5,15 @@ import lexer as lex
 
 class Parser:
     def __init__(self, src_program_str):
-        self.name = "PARSEAR"
         self.lexer = lex.Lexer()
         self.index = -1  #start at -1 so that the first token is at index 0
         self.src_program = src_program_str
         self.tokens = self.lexer.GenerateTokens(self.src_program)
-        #print("[Parser] Lexer generated token list ::")
-        #for t in self.tokens:
-        #    print(t.type, t.lexeme)
         self.crtToken = lex.Token("", lex.TokenType.error)
         self.nextToken = lex.Token("", lex.TokenType.error)
-        self.ASTroot = ast.ASTAssignmentNode     #this will need to change once you introduce the AST program node .... that should become the new root node    
+        self.ASTroot = ast.ASTProgramNode()
 
-    def NextTokenSkipWS(self):
+    def NextTokenSkipWS_Comments(self):
         self.index += 1   #Grab the next token
         if (self.index < len(self.tokens)):
             self.crtToken = self.tokens[self.index]
@@ -25,10 +21,9 @@ class Parser:
             self.crtToken = lex.Token(lex.TokenType.end, "END")
 
     def NextToken(self):
-        self.NextTokenSkipWS()
-        while (self.crtToken.type == lex.TokenType.whitespace):
-            #print("--> Skipping WS")
-            self.NextTokenSkipWS()
+        self.NextTokenSkipWS_Comments()
+        while (self.crtToken.type == lex.TokenType.whitespace or self.crtToken.type == lex.TokenType.linecomment or self.crtToken.type == lex.TokenType.blockcomment):
+            self.NextTokenSkipWS_Comments()
 
         #print("Next Token Set to ::: ", self.crtToken.type, self.crtToken.lexeme)                 
 
@@ -87,7 +82,6 @@ class Parser:
         self.ASTroot = self.ParseProgram()
 
 
-#parser = Parser("x=23;")
 parser = Parser("     x=   23 ; y=  100;  z = 23 ;")
 parser.Parse()
 
