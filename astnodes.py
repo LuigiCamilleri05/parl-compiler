@@ -47,6 +47,19 @@ class ASTBlockNode(ASTNode):
     def accept(self, visitor):
         visitor.visit_block_node(self)        
 
+class ASTProgramNode(ASTNode):
+    def __init__(self):
+        self.name = "ASTProgramNode"
+        self.stmts = []
+
+    def add_statement(self, stmt):
+        self.stmts.append(stmt)
+
+    def accept(self, visitor):
+        visitor.visit_program_node(self)
+        for stmt in self.stmts:
+            stmt.accept(visitor)
+
 class ASTVisitor:
     def visit_integer_node(self, node):
         raise NotImplementedError()
