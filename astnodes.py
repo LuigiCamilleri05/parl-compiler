@@ -103,23 +103,3 @@ class PrintNodesVisitor(ASTVisitor):
             st.accept(self)
         
         self.dec_tab_count()
-
-                
-#Create a print visitor instance
-print_visitor = PrintNodesVisitor()
-
-#assume root node the AST assignment node .... 
-#x=23
-print("Building AST for assigment statement x=23;")
-assignment_lhs = ASTVariableNode("x")
-assignment_rhs = ASTIntegerNode(23)
-root = ASTAssignmentNode(assignment_lhs, assignment_rhs)
-root.accept(print_visitor)
-print("Node Count => ", print_visitor.node_count)
-print("----")
-#assume root node the AST variable node .... 
-#x123 
-print("Building AST for variable x123;")
-root = ASTVariableNode("x123")
-root.accept(print_visitor)
-print("Node Count => ", print_visitor.node_count)
