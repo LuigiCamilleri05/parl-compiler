@@ -1,5 +1,3 @@
-# Now we need the parser (using tokens produced by the Lexer) to build the AST - this code snipper is able to build ASTAssignmentNode trees. LHS can only be an integer here ....
-# A small predictive recursive descent parser
 import astnodes as ast
 import lexer as lex
 
@@ -14,7 +12,7 @@ class Parser:
         self.ASTroot = ast.ASTProgramNode()
 
     def NextTokenSkipWS_Comments(self):
-        self.index += 1   #Grab the next token
+        self.index += 1   #Gets next token 
         if (self.index < len(self.tokens)):
             self.crtToken = self.tokens[self.index]
         else:
@@ -22,10 +20,11 @@ class Parser:
 
     def NextToken(self):
         self.NextTokenSkipWS_Comments()
-        while (self.crtToken.type == lex.TokenType.whitespace or self.crtToken.type == lex.TokenType.linecomment or self.crtToken.type == lex.TokenType.blockcomment):
+        while (self.crtToken.type == lex.TokenType.whitespace 
+            or self.crtToken.type == lex.TokenType.linecomment
+            or self.crtToken.type == lex.TokenType.blockcomment):
             self.NextTokenSkipWS_Comments()
-
-        #print("Next Token Set to ::: ", self.crtToken.type, self.crtToken.lexeme)                 
+                
 
     def ParseExpression(self):
         #for now we'll assume an expression can only be an integer
