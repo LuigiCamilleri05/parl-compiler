@@ -389,6 +389,28 @@ class Lexer:
             return self.GetTokenTypeByFinalState(state, lexeme), lexeme
         else: 
             return Token(TokenType.error, "error"), "error"
+        
+    # Generates tokens from the input string
+    def GenerateTokens(Lexer, src_program_str):
+        print("INPUT:: " + src_program_str)
+        tokens_list = []
+        src_program_idx = 0;
+        token, lexeme = Lexer.NextToken(src_program_str, src_program_idx)
+        tokens_list.append(token);
+
+        while (token != TokenType.end):  
+            src_program_idx = src_program_idx + len(lexeme)    
+            token, lexeme = Lexer.NextToken(src_program_str, src_program_idx)
+            tokens_list.append(token)
+            print ("Nxt TOKEN: ", token.type, " ", lexeme, "(", len(lexeme), ")  => IDX: ", src_program_idx)
+            if (token.type == TokenType.error):
+                break; 
+            if (token.type == TokenType.end):
+                break; 
+        if (token.type == TokenType.end):
+            print("Encountered end of Input token!! Done")
+            
+        return tokens_list;
 
     
     # List of keywords in PArl
