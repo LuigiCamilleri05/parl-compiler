@@ -82,8 +82,8 @@ class Lexer:
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
                             "hash", "dot","whitespace", "newline", "other",]
         # Initializes the states and accepting states
-        self.states_list = list(range(45))  
-        self.states_accp = list(range(1, 24)) + [25] + list(range(28, 34)) + [39, 41, 44]
+        self.states_list = list(range(47))  
+        self.states_accp = list(range(1, 24)) + [25] + list(range(28, 34)) + [39, 41, 44, 46]
 
         # Initializes the transition table
         self.rows = len(self.states_list)
@@ -97,10 +97,17 @@ class Lexer:
             self.Tx[s][self.lexeme_list.index(l)] = n
 
         # Identifiers
-        for l in ["letter", "hexletter", "underscore"]:
-            set_tx(0, l, 1)
+        set_tx(0, "letter", 1)
+        set_tx(0, "hexletter", 1)
+        for l in ["letter", "hexletter", "underscore", "digit"]:
             set_tx(1, l, 1)
-        set_tx(1, "digit", 1)
+
+        set_tx(0, "underscore", 45)
+        set_tx(45, "underscore", 46)
+        set_tx(46, "letter", 46)
+        set_tx(46, "hexletter", 46)
+        set_tx(46, "underscore", 46)
+
 
         # Integers
         set_tx(0, "digit", 2)
@@ -259,6 +266,11 @@ class Lexer:
             return Token(TokenType.linecomment, lexeme)
         elif state == 44:
             return Token(TokenType.blockcomment, lexeme)
+        elif state == 46:
+            if lexeme in self.underscore_keywords:
+                return Token(self.underscore_keywords[lexeme], lexeme)
+            else:
+                return Token(TokenType.error, lexeme)
     
         else:
             return Token(TokenType.error, lexeme)
@@ -435,6 +447,9 @@ class Lexer:
         "int": TokenType.kw_int,
         "bool": TokenType.kw_bool,
         "colour": TokenType.kw_colour,
+    }
+
+    underscore_keywords = {
         "__print": TokenType.kw__print,
         "__delay": TokenType.kw__delay,
         "__write": TokenType.kw__write,
@@ -442,5 +457,5 @@ class Lexer:
         "__random_int": TokenType.kw__random_int,
         "__read": TokenType.kw__read,
         "__width": TokenType.kw__width,
-        "__height": TokenType.kw__height
+        "__height": TokenType.kw__height,
     }
