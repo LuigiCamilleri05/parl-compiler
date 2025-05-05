@@ -7,62 +7,64 @@ from enum import Enum
 class TokenType(Enum):
     identifier = 1
     integer = 2
-    equals = 3
-    semicolon = 4
-    plus = 5
-    minus = 6
-    multiply = 7
-    slash = 8
-    less = 9
-    greater = 10
-    excl = 11
-    lparen = 12
-    rparen = 13
-    lbrace = 14
-    rbrace = 15
-    lbracket = 16
-    rbracket = 17
-    colon = 18
-    comma = 19
-    hash = 20
-    dot = 21
-    floatliteral = 22
-    booleanliteral = 23
-    colourliteral = 24
-    kw_let = 25
-    kw_fun = 26
-    kw_if = 27
-    kw_else = 28
-    kw_for = 29
-    kw_while = 30
-    kw_return = 31
-    kw_as = 32
-    kw_not = 33
-    kw_and = 34
-    kw_or = 35
-    kw_float = 36
-    kw_int = 37
-    kw_bool = 38
-    kw_colour = 39
-    kw__print = 40
-    kw__delay = 41
-    kw__write = 42
-    kw__write_box = 43
-    kw__random_int = 44
-    kw__read = 45
-    kw__width = 46
-    kw__height = 47
-    equal_equal = 48     
-    not_equal = 49       
-    less_equal = 50      
-    greater_equal = 51   
-    arrow = 52           
-    error = 53
-    end = 54
-    whitespace = 55
-    linecomment = 56
-    blockcomment = 57
-    newline = 58
+    hexletter = 3
+    equals = 4
+    semicolon = 5
+    plus = 6
+    minus = 7
+    multiply = 8
+    slash = 9
+    less = 10
+    greater = 11
+    excl = 12
+    lparen = 13
+    rparen = 14
+    lbrace = 15
+    rbrace = 16
+    lbracket = 17
+    rbracket = 18
+    colon = 19
+    comma = 20
+    hash = 21
+    dot = 22
+    floatliteral = 23
+    booleanliteral = 24
+    colourliteral = 25
+    kw_let = 26
+    kw_fun = 27
+    kw_if = 28
+    kw_else = 29
+    kw_for = 30
+    kw_while = 31
+    kw_return = 32
+    kw_as = 33
+    kw_not = 34
+    kw_and = 35
+    kw_or = 36
+    kw_float = 37
+    kw_int = 38
+    kw_bool = 39
+    kw_colour = 40
+    kw__print = 41
+    kw__delay = 42
+    kw__write = 43
+    kw__write_box = 44
+    kw__random_int = 45
+    kw__read = 46
+    kw__width = 47
+    kw__height = 48
+    equal_equal = 49     
+    not_equal = 50       
+    less_equal = 51      
+    greater_equal = 52   
+    arrow = 53           
+    error = 54
+    end = 55
+    whitespace = 56
+    linecomment = 57
+    blockcomment = 58
+    newline = 59
+
 
 # Token class represents a token with its type and lexeme
 class Token:
@@ -74,7 +76,7 @@ class Token:
 class Lexer:
     def __init__(self):
         # Initializes the chcaracter categories
-        self.lexeme_list = ["letter", "digit", "underscore", "plus", "minus",
+        self.lexeme_list = ["letter", "digit", "hexletter", "underscore", "plus", "minus",
                             "multiply", "slash", "equals", "less", "greater", 
                             "excl", "lparen", "rparen", "lbrace", "rbrace",
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
@@ -95,7 +97,7 @@ class Lexer:
             self.Tx[s][self.lexeme_list.index(l)] = n
 
         # Identifiers
-        for l in ["letter", "underscore"]:
+        for l in ["letter", "hexletter", "underscore"]:
             set_tx(0, l, 1)
             set_tx(1, l, 1)
         set_tx(1, "digit", 1)
@@ -129,6 +131,7 @@ class Lexer:
         set_tx(27, "digit", 28)
         set_tx(28, "digit", 28)
         set_tx(28, "letter", 28)
+        set_tx(28, "hexletter", 28)
 
         # Compound operators
         set_tx(3, "equals", 29)
@@ -141,11 +144,11 @@ class Lexer:
 
         # Colour literals
         set_tx(20, "digit", 34)
-        set_tx(20, "letter", 34)
+        set_tx(20, "hexletter", 34)
         # Since colour literals have a fixed length of 7
         for i in range(34, 39):
             set_tx(i, "digit", i + 1)
-            set_tx(i, "letter", i + 1)
+            set_tx(i, "hexletter", i + 1)
 
         # Line comments
         set_tx(8, "slash", 40)
@@ -262,7 +265,9 @@ class Lexer:
 
     def CatChar(self, character):
 
-        if character.isalpha():
+        if character in 'ABCDEFabcdef':
+            return "hexletter"
+        elif character.isalpha():
             return "letter"
         elif character.isdigit():
             return "digit"
