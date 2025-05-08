@@ -138,7 +138,7 @@ class Parser:
         elif tok.type in [lex.TokenType.minus, lex.TokenType.kw_not]:
             op = tok.lexeme
             self.NextToken()
-            expr = self.ParseFactor()
+            expr = self.ParseExpression()
             return ast.ASTUnaryOpNode(op, expr)
 
         elif tok.type == lex.TokenType.kw__read:
@@ -484,7 +484,7 @@ class Parser:
         elif (self.crtToken.type == lex.TokenType.kw_for):
             return self.ParseForStatement()
         elif (self.crtToken.type == lex.TokenType.kw_while):
-            return #TODO
+            return self.ParseWhileStatement()
         elif (self.crtToken.type == lex.TokenType.kw_return):
             return #TODO
         elif (self.crtToken.type == lex.TokenType.kw_fun):

@@ -127,8 +127,15 @@ class ASTForNode(ASTNode):
 
     def accept(self, visitor):
         return visitor.visit_for_node(self)
+    
+class ASTWhileNode(ASTNode):
+    def __init__(self, condition, body):
+        self.name = "ASTWhileNode"
+        self.condition = condition
+        self.body = body
 
-
+    def accept(self, visitor):
+        return visitor.visit_while_node(self)
 
 class ASTFunctionCallNode(ASTExpressionNode):
     def __init__(self, func_name, args):
@@ -288,6 +295,9 @@ class ASTVisitor:
     def visit_for_node(self, node):
         raise NotImplementedError()
     
+    def visit_while_node(self, node):
+        raise NotImplementedError()
+    
     def visit_function_call_node(self, node):
         raise NotImplementedError()
 
@@ -435,6 +445,22 @@ class PrintNodesVisitor(ASTVisitor):
             self.inc_tab_count()
             node.update.accept(self)
             self.dec_tab_count()
+
+        print("\t" * self.tab_count + "Body:")
+        self.inc_tab_count()
+        node.body.accept(self)
+        self.dec_tab_count()
+
+        self.dec_tab_count()
+
+    def visit_while_node(self, node):
+        print("WHILE Statement =>")
+        self.inc_tab_count()
+
+        print("\t" * self.tab_count + "Condition:")
+        self.inc_tab_count()
+        node.condition.accept(self)
+        self.dec_tab_count()
 
         print("\t" * self.tab_count + "Body:")
         self.inc_tab_count()
