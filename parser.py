@@ -229,15 +229,73 @@ class Parser:
 
         vartype = self.ParseType()
 
-        # Match '='
-        if self.crtToken.type != lex.TokenType.equals:
-            raise Exception("Syntax Error: Expected '=' in variable declaration.")
+        if self.crtToken.type == lex.TokenType.equals:
+            self.NextToken()
+            expr = self.ParseExpression()
+            return ast.ASTVariableDeclNode(identifier, vartype, expr)
+
+        elif self.crtToken.type == lex.TokenType.lbracket:
+            return self.ParseVariableDeclArray(identifier, vartype)
+
+        else:
+            raise Exception("Syntax Error: Expected '=' or '[' in variable declaration")
+        
+    def ParseVariableDeclArray(self, identifier, vartype):
         self.NextToken()
 
-        # Parse the initializer expression
-        expr = self.ParseExpression()
+        # Case 1: declared size [3] = [val]
+        if self.crtToken.type == lex.TokenType.integer:
+            size = ast.ASTIntegerNode(self.crtToken.lexeme)
+            self.NextToken()
 
-        return ast.ASTVariableDeclNode(identifier, vartype, expr)
+            if self.crtToken.type != lex.TokenType.rbracket:
+                raise Exception("Expected ']' after array size")
+            self.NextToken()
+
+            if self.crtToken.type != lex.TokenType.equals:
+                raise Exception("Expected '=' after ']' in sized array")
+            self.NextToken()
+
+            if self.crtToken.type != lex.TokenType.lbracket:
+                raise Exception("Expected '[' to start array literal")
+            self.NextToken()
+
+            value = self.ParseLiteral()
+
+            if self.crtToken.type != lex.TokenType.rbracket:
+                raise Exception("Expected ']' after single array literal")
+            self.NextToken()
+
+            return ast.ASTArrayDeclNode(identifier, vartype, size, [value])
+
+        # Case 2: inferred size [] = [val, val, ...]
+        elif self.crtToken.type == lex.TokenType.rbracket:
+            size = None
+            self.NextToken()
+
+            if self.crtToken.type != lex.TokenType.equals:
+                raise Exception("Expected '=' after ']' in inferred array")
+            self.NextToken()
+
+            if self.crtToken.type != lex.TokenType.lbracket:
+                raise Exception("Expected '[' to start array literal")
+            self.NextToken()
+
+            values = [self.ParseLiteral()]
+
+            while self.crtToken.type == lex.TokenType.comma:
+                self.NextToken()
+                values.append(self.ParseLiteral())
+
+            if self.crtToken.type != lex.TokenType.rbracket:
+                raise Exception("Expected ']' to close array literal")
+            self.NextToken()
+
+            return ast.ASTArrayDeclNode(identifier, vartype, size, values)
+
+        else:
+            raise Exception("Syntax Error: Invalid array declaration format")
+
 
 
     def ParseAssignment(self):
@@ -259,6 +317,14 @@ class Parser:
         assignment_rhs = self.ParseExpression()
                 
         return ast.ASTAssignmentNode(assignment_lhs, assignment_rhs)
+    
+    def ParsePrintStatement(self):
+        if self.crtToken.type != lex.TokenType.kw__print:
+            raise Exception("Syntax Error: Expected '__print'")
+        self.NextToken()
+
+        expr = self.ParseExpression()
+        return ast.ASTPrintNode(expr)
             
     def ParseStatement(self):
         if (self.crtToken.type == lex.TokenType.kw_let):
@@ -266,7 +332,7 @@ class Parser:
         elif (self.crtToken.type == lex.TokenType.identifier):
             return self.ParseAssignment()
         elif (self.crtToken.type == lex.TokenType.kw__print):
-            return #TODO
+            return self.ParsePrintStatement()
         elif (self.crtToken.type == lex.TokenType.kw__delay):
             return #TODO
         elif (self.crtToken.type == lex.TokenType.kw__write):
@@ -312,7 +378,7 @@ class Parser:
         self.ASTroot = self.ParseProgram()
 
 
-parser = Parser(("a = 5;"))
+parser = Parser(("__print 1"))
 parser.Parse()
 
 print_visitor = ast.PrintNodesVisitor()

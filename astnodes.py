@@ -68,6 +68,14 @@ class ASTColourNode(ASTExpressionNode):
     def accept(self, visitor):
         visitor.visit_colour_node(self)
 
+class ASTPrintNode(ASTStatementNode):
+    def __init__(self, expr):
+        self.name = "ASTPrintNode"
+        self.expr = expr  
+
+    def accept(self, visitor):
+        visitor.visit_print_node(self)
+
 class ASTFunctionCallNode(ASTExpressionNode):
     def __init__(self, func_name, args):
         self.name = "ASTFunctionCallNode"
@@ -106,6 +114,16 @@ class ASTCastNode(ASTExpressionNode):
     def accept(self, visitor):
         visitor.visit_cast_node(self)
 
+class ASTArrayDeclNode(ASTStatementNode):
+    def __init__(self, identifier, vartype, size_expr, values):
+        self.name = "ASTArrayDeclNode"
+        self.identifier = identifier      # str — variable name
+        self.vartype = vartype            # str — "int", "float", etc.
+        self.size_expr = size_expr        # ASTIntegerNode or None
+        self.values = values              # list of ASTLiteralNode
+
+    def accept(self, visitor):
+        visitor.visit_array_decl_node(self)
 
 class ASTPadWidthNode(ASTExpressionNode):
     def __init__(self):
@@ -197,6 +215,12 @@ class ASTVisitor:
     
     def visit_colour_node(self, node):
         raise NotImplementedError()
+    
+    def visit_print_node(self, node):
+        raise NotImplementedError()
+    
+    def visit_function_call_node(self, node):
+        raise NotImplementedError()
 
     def visit_binary_op_node(self, node):
         raise NotImplementedError()
@@ -205,6 +229,9 @@ class ASTVisitor:
         raise NotImplementedError()
     
     def visit_cast_node(self, node):
+        raise NotImplementedError()
+    
+    def visit_variable_decl_node(self, node):
         raise NotImplementedError()
 
     def visit_pad_width_node(self, node):
@@ -271,6 +298,12 @@ class PrintNodesVisitor(ASTVisitor):
         self.node_count += 1
         print('\t' * self.tab_count, "Colour value::", colour_node.value)
 
+    def visit_print_node(self, node):
+        print('\t' * self.tab_count, "Print Statement =>")
+        self.inc_tab_count()
+        node.expr.accept(self)
+        self.dec_tab_count()
+
     def visit_function_call_node(self, node):
         print('\t' * self.tab_count, f"Function Call: {node.func_name}()")
         self.tab_count += 1
@@ -296,6 +329,24 @@ class PrintNodesVisitor(ASTVisitor):
         self.tab_count += 1
         node.expr.accept(self)
         self.tab_count -= 1
+
+    def visit_array_decl_node(self, node):
+        print('\t' * self.tab_count, f"Array Declaration => {node.identifier} : {node.vartype}")
+        self.inc_tab_count()
+
+        if node.size_expr:
+            print('\t' * self.tab_count, "Declared Size:")
+            self.inc_tab_count()
+            node.size_expr.accept(self)
+            self.dec_tab_count()
+
+        print('\t' * self.tab_count, "Initial Values:")
+        self.inc_tab_count()
+        for val in node.values:
+            val.accept(self)
+        self.dec_tab_count()
+
+        self.dec_tab_count()
 
     def visit_pad_width_node(self, pad_width_node):
         self.node_count += 1
