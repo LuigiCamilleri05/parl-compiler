@@ -396,6 +396,46 @@ class Parser:
             else_block = self.ParseBlock()
 
         return ast.ASTIfNode(condition, then_block, else_block)
+    
+    def ParseForStatement(self):
+        if self.crtToken.type != lex.TokenType.kw_for:
+            raise Exception("Syntax Error: Expected 'for'")
+        self.NextToken()
+
+        if self.crtToken.type != lex.TokenType.lparen:
+            raise Exception("Syntax Error: Expected '(' after 'for'")
+        self.NextToken()
+
+        # Optional initializer
+        init = None
+        if self.crtToken.type == lex.TokenType.kw_let:
+            init = self.ParseVariableDecl()
+
+        if self.crtToken.type != lex.TokenType.semicolon:
+            raise Exception("Syntax Error: Expected ';' after initializer in 'for'")
+        self.NextToken()
+
+        # Condition (required)
+        condition = self.ParseExpression()
+
+        if self.crtToken.type != lex.TokenType.semicolon:
+            raise Exception("Syntax Error: Expected ';' after condition in 'for'")
+        self.NextToken()
+
+        # Optional update
+        update = None
+        if self.crtToken.type == lex.TokenType.identifier:
+            update = self.ParseAssignment()
+
+        if self.crtToken.type != lex.TokenType.rparen:
+            raise Exception("Syntax Error: Expected ')' to close 'for' loop control")
+        self.NextToken()
+
+        # Block
+        body = self.ParseBlock()
+
+        return ast.ASTForNode(init, condition, update, body)
+
 
     def ExpectSemicolon(self):
         if self.crtToken.type != lex.TokenType.semicolon:
@@ -427,7 +467,7 @@ class Parser:
         elif (self.crtToken.type == lex.TokenType.kw_if):
             return self.ParseIfStatement()
         elif (self.crtToken.type == lex.TokenType.kw_for):
-            return #TODO
+            return self.ParseForStatement()
         elif (self.crtToken.type == lex.TokenType.kw_while):
             return #TODO
         elif (self.crtToken.type == lex.TokenType.kw_return):
@@ -472,11 +512,8 @@ class Parser:
 
 parser = Parser(("""
 
-    let x : int = 5;
-    if (x < 10) {
-        __print x;
-    } else {
-        __print 0;
+    for (let i : int = 0; i < 5; i = i + 1) {
+        __print i;
     }
 
 """))

@@ -117,6 +117,17 @@ class ASTIfNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_if_node(self)
 
+class ASTForNode(ASTNode):
+    def __init__(self, init, condition, update, body):
+        self.name = "ASTForNode"
+        self.init = init        
+        self.condition = condition  
+        self.update = update    
+        self.body = body        
+
+    def accept(self, visitor):
+        return visitor.visit_for_node(self)
+
 
 
 class ASTFunctionCallNode(ASTExpressionNode):
@@ -274,6 +285,9 @@ class ASTVisitor:
     def visit_if_node(self, node):
         raise NotImplementedError()
     
+    def visit_for_node(self, node):
+        raise NotImplementedError()
+    
     def visit_function_call_node(self, node):
         raise NotImplementedError()
 
@@ -401,6 +415,33 @@ class PrintNodesVisitor(ASTVisitor):
 
         self.dec_tab_count()
 
+    def visit_for_node(self, node):
+        print("FOR Statement =>")
+        self.inc_tab_count()
+        
+        if node.init:
+            print("\t" * self.tab_count + "Initializer:")
+            self.inc_tab_count()
+            node.init.accept(self)
+            self.dec_tab_count()
+
+        print("\t" * self.tab_count + "Condition:")
+        self.inc_tab_count()
+        node.condition.accept(self)
+        self.dec_tab_count()
+
+        if node.update:
+            print("\t" * self.tab_count + "Update:")
+            self.inc_tab_count()
+            node.update.accept(self)
+            self.dec_tab_count()
+
+        print("\t" * self.tab_count + "Body:")
+        self.inc_tab_count()
+        node.body.accept(self)
+        self.dec_tab_count()
+
+        self.dec_tab_count()
 
     def visit_function_call_node(self, node):
         print('\t' * self.tab_count, f"Function Call: {node.func_name}()")
