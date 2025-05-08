@@ -107,6 +107,17 @@ class ASTWriteBoxNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_write_box_node(self)
 
+class ASTIfNode(ASTStatementNode):
+    def __init__(self, condition_expr, then_block, else_block=None):
+        self.name = "ASTIfNode"
+        self.condition_expr = condition_expr        # ASTExpressionNode
+        self.then_block = then_block                # ASTBlockNode
+        self.else_block = else_block                # ASTBlockNode or None
+
+    def accept(self, visitor):
+        visitor.visit_if_node(self)
+
+
 
 class ASTFunctionCallNode(ASTExpressionNode):
     def __init__(self, func_name, args):
@@ -260,6 +271,9 @@ class ASTVisitor:
     def visit_write_box_node(self, node):
         raise NotImplementedError()
     
+    def visit_if_node(self, node):
+        raise NotImplementedError()
+    
     def visit_function_call_node(self, node):
         raise NotImplementedError()
 
@@ -368,6 +382,25 @@ class PrintNodesVisitor(ASTVisitor):
         node.h_expr.accept(self)
         node.val_expr.accept(self)
         self.dec_tab_count()
+
+    def visit_if_node(self, node):
+        print('\t' * self.tab_count, "If Statement =>")
+        self.inc_tab_count()
+
+        print('\t' * self.tab_count, "Condition:")
+        self.inc_tab_count()
+        node.condition_expr.accept(self)
+        self.dec_tab_count()
+
+        print('\t' * self.tab_count, "Then Block:")
+        node.then_block.accept(self)
+
+        if node.else_block:
+            print('\t' * self.tab_count, "Else Block:")
+            node.else_block.accept(self)
+
+        self.dec_tab_count()
+
 
     def visit_function_call_node(self, node):
         print('\t' * self.tab_count, f"Function Call: {node.func_name}()")

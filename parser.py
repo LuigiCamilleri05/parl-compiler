@@ -22,7 +22,8 @@ class Parser:
         self.NextTokenSkipWS_Comments()
         while (self.crtToken.type == lex.TokenType.whitespace 
             or self.crtToken.type == lex.TokenType.linecomment
-            or self.crtToken.type == lex.TokenType.blockcomment):
+            or self.crtToken.type == lex.TokenType.blockcomment
+            or self.crtToken.type == lex.TokenType.newline):
             self.NextTokenSkipWS_Comments()
 
     def ParsePadRead(self):
@@ -371,21 +372,60 @@ class Parser:
 
         else:
             raise Exception("Syntax Error: Expected '__write' or '__write_box'")
+        
+    def ParseIfStatement(self):
+        if self.crtToken.type != lex.TokenType.kw_if:
+            raise Exception("Syntax Error: Expected 'if'")
+        self.NextToken()
+
+        if self.crtToken.type != lex.TokenType.lparen:
+            raise Exception("Syntax Error: Expected '(' after 'if'")
+        self.NextToken()
+
+        condition = self.ParseExpression()
+
+        if self.crtToken.type != lex.TokenType.rparen:
+            raise Exception("Syntax Error: Expected ')' after condition")
+        self.NextToken()
+
+        then_block = self.ParseBlock()
+
+        else_block = None
+        if self.crtToken.type == lex.TokenType.kw_else:
+            self.NextToken()
+            else_block = self.ParseBlock()
+
+        return ast.ASTIfNode(condition, then_block, else_block)
+
+    def ExpectSemicolon(self):
+        if self.crtToken.type != lex.TokenType.semicolon:
+            raise Exception("Syntax Error: Expected ';' after statement")
+        self.NextToken()
 
             
     def ParseStatement(self):
-        if (self.crtToken.type == lex.TokenType.kw_let):
-            return self.ParseVariableDecl()
-        elif (self.crtToken.type == lex.TokenType.identifier):
-            return self.ParseAssignment()
-        elif (self.crtToken.type == lex.TokenType.kw__print):
-            return self.ParsePrintStatement()
-        elif (self.crtToken.type == lex.TokenType.kw__delay):
-            return self.ParseDelayStatement()
+        if self.crtToken.type == lex.TokenType.kw_let:
+            stmt = self.ParseVariableDecl()
+            self.ExpectSemicolon()
+            return stmt
+        elif self.crtToken.type == lex.TokenType.identifier:
+            stmt = self.ParseAssignment()
+            self.ExpectSemicolon()
+            return stmt
+        elif self.crtToken.type == lex.TokenType.kw__print:
+            stmt = self.ParsePrintStatement()
+            self.ExpectSemicolon()
+            return stmt
+        elif self.crtToken.type == lex.TokenType.kw__delay:
+            stmt = self.ParseDelayStatement()
+            self.ExpectSemicolon()
+            return stmt
         elif self.crtToken.type in [lex.TokenType.kw__write, lex.TokenType.kw__write_box]:
-            return self.ParseWriteStatement()
+            stmt = self.ParseWriteStatement()
+            self.ExpectSemicolon()
+            return stmt
         elif (self.crtToken.type == lex.TokenType.kw_if):
-            return #TODO
+            return self.ParseIfStatement()
         elif (self.crtToken.type == lex.TokenType.kw_for):
             return #TODO
         elif (self.crtToken.type == lex.TokenType.kw_while):
@@ -400,32 +440,46 @@ class Parser:
             raise Exception(f"Syntax Error: Unexpected token {self.crtToken.type}")
 
     def ParseBlock(self):
-        #At the moment we only have assignment statements .... you'll need to add more for the assignment - branching depends on the token type
+        if self.crtToken.type != lex.TokenType.lbrace:
+            raise Exception("Syntax Error: Expected '{' to start a block")
 
+        self.NextToken()  # consume '{'
         block = ast.ASTBlockNode()
 
-        while (self.crtToken.type != lex.TokenType.end):
-            #print("New Statement - Processing Initial Token:: ", self.crtToken.type, self.crtToken.lexeme)
-            s = self.ParseStatement()
-            block.add_statement(s)
-            if (self.crtToken.type == lex.TokenType.semicolon):
-                self.NextToken()
-            else:
-                print("Syntax Error - No Semicolon separating statements in block")
-                break
-        
+        while self.crtToken.type != lex.TokenType.rbrace:
+            if self.crtToken.type == lex.TokenType.end:
+                raise Exception("Syntax Error: Unexpected end of input inside block")
+            stmt = self.ParseStatement()
+            if stmt:
+                block.add_statement(stmt)
+
+        self.NextToken()  # consume '}'
         return block
 
-    def ParseProgram(self):                        
-        self.NextToken()  #set crtToken to the first token (skip all WS and comments)
-        b = self.ParseBlock()        
-        return b        
+
+    def ParseProgram(self):
+        self.NextToken()
+        program = ast.ASTBlockNode()
+        while self.crtToken.type != lex.TokenType.end:
+            stmt = self.ParseStatement()
+            if stmt:
+                program.add_statement(stmt)
+        return program     
 
     def Parse(self):        
         self.ASTroot = self.ParseProgram()
 
 
-parser = Parser(("__delay 1; __write 1, 2, #FF0000; __write_box 1;"))
+parser = Parser(("""
+
+    let x : int = 5;
+    if (x < 10) {
+        __print x;
+    } else {
+        __print 0;
+    }
+
+"""))
 parser.Parse()
 
 print_visitor = ast.PrintNodesVisitor()
