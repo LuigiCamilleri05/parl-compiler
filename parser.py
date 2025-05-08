@@ -450,6 +450,14 @@ class Parser:
         body = self.ParseBlock()
 
         return ast.ASTWhileNode(condition, body)
+    
+    def ParseRtrnStatement(self):
+        if self.crtToken.type != lex.TokenType.kw_return:
+            raise Exception("Syntax Error: Expected '_return'")
+        self.NextToken()
+
+        expr = self.ParseExpression()
+        return ast.ASTRtrnNode(expr)
 
 
     def ExpectSemicolon(self):
@@ -486,7 +494,9 @@ class Parser:
         elif (self.crtToken.type == lex.TokenType.kw_while):
             return self.ParseWhileStatement()
         elif (self.crtToken.type == lex.TokenType.kw_return):
-            return #TODO
+            stmt = self.ParseRtrnStatement()
+            self.ExpectSemicolon()
+            return stmt
         elif (self.crtToken.type == lex.TokenType.kw_fun):
             return #TODO
         elif self.crtToken.type == lex.TokenType.lbrace:
@@ -527,9 +537,8 @@ class Parser:
 
 parser = Parser(("""
 
-    for (let i : int = 0; i < 5; i = i + 1) {
-        __print i;
-    }
+return 0; // This is a comment
+return 0;
 
 """))
 parser.Parse()
