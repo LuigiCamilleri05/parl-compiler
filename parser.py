@@ -411,16 +411,12 @@ class Parser:
         if self.crtToken.type == lex.TokenType.kw_let:
             init = self.ParseVariableDecl()
 
-        if self.crtToken.type != lex.TokenType.semicolon:
-            raise Exception("Syntax Error: Expected ';' after initializer in 'for'")
-        self.NextToken()
+        self.ExpectSemicolon()
 
         # Condition (required)
         condition = self.ParseExpression()
 
-        if self.crtToken.type != lex.TokenType.semicolon:
-            raise Exception("Syntax Error: Expected ';' after condition in 'for'")
-        self.NextToken()
+        self.ExpectSemicolon()
 
         # Optional update
         update = None
@@ -435,6 +431,25 @@ class Parser:
         body = self.ParseBlock()
 
         return ast.ASTForNode(init, condition, update, body)
+    
+    def ParseWhileStatement(self):
+        if self.crtToken.type != lex.TokenType.kw_while:
+            raise Exception("Syntax Error: Expected 'while'")
+        self.NextToken()
+
+        if self.crtToken.type != lex.TokenType.lparen:
+            raise Exception("Syntax Error: Expected '(' after 'while'")
+        self.NextToken()
+
+        condition = self.ParseExpression()
+
+        if self.crtToken.type != lex.TokenType.rparen:
+            raise Exception("Syntax Error: Expected ')' after condition")
+        self.NextToken()
+
+        body = self.ParseBlock()
+
+        return ast.ASTWhileNode(condition, body)
 
 
     def ExpectSemicolon(self):
