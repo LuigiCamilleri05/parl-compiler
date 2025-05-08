@@ -28,6 +28,14 @@ class ASTLiteralNode(ASTExpressionNode):
     def accept(self, visitor):
         visitor.visit_literal_node(self)
 
+class ASTTypeNode(ASTExpressionNode):
+    def __init__(self, lexeme):
+        self.name = "ASTTypeNode"
+        self.lexeme = lexeme
+
+    def accept(self, visitor):
+        visitor.visit_type_node(self)
+
 class ASTIntegerNode(ASTExpressionNode):
     def __init__(self, v):
         self.name = "ASTIntegerNode"
@@ -58,7 +66,47 @@ class ASTColourNode(ASTExpressionNode):
         self.value = v
 
     def accept(self, visitor):
-        visitor.visit_colour_node(self)      
+        visitor.visit_colour_node(self)
+
+class ASTFunctionCallNode(ASTExpressionNode):
+    def __init__(self, func_name, args):
+        self.name = "ASTFunctionCallNode"
+        self.func_name = func_name
+        self.args = args  # list of ASTExpressionNode
+
+    def accept(self, visitor):
+        visitor.visit_function_call_node(self)
+
+
+class ASTBinaryOpNode(ASTExpressionNode):
+    def __init__(self, op, left, right):
+        self.name = "ASTBinaryOpNode"
+        self.op = op              # string, e.g., "+", "*", "==", etc.
+        self.left = left          # ASTExpressionNode
+        self.right = right        # ASTExpressionNode
+
+    def accept(self, visitor):
+        visitor.visit_binary_op_node(self)
+
+class ASTUnaryOpNode(ASTExpressionNode):
+    def __init__(self, op, operand):
+        self.name = "ASTUnaryOpNode"
+        self.op = op              # string, e.g., "-", "not"
+        self.operand = operand    # ASTExpressionNode
+
+    def accept(self, visitor):
+        visitor.visit_unary_op_node(self)
+
+class ASTCastNode(ASTExpressionNode):
+    def __init__(self, expr, target_type):
+        self.name = "ASTCastNode"
+        self.expr = expr              # ASTExpressionNode
+        self.target_type = target_type  # string, e.g., "float", "int", etc.
+
+    def accept(self, visitor):
+        visitor.visit_cast_node(self)
+
+
 class ASTPadWidthNode(ASTExpressionNode):
     def __init__(self):
         self.name = "ASTPadWidthNode"
@@ -149,7 +197,16 @@ class ASTVisitor:
     
     def visit_colour_node(self, node):
         raise NotImplementedError()
+
+    def visit_binary_op_node(self, node):
+        raise NotImplementedError()
     
+    def visit_unary_op_node(self, node):
+        raise NotImplementedError()
+    
+    def visit_cast_node(self, node):
+        raise NotImplementedError()
+
     def visit_pad_width_node(self, node):
         raise NotImplementedError()
     
@@ -213,6 +270,32 @@ class PrintNodesVisitor(ASTVisitor):
     def visit_colour_node(self, colour_node):
         self.node_count += 1
         print('\t' * self.tab_count, "Colour value::", colour_node.value)
+
+    def visit_function_call_node(self, node):
+        print('\t' * self.tab_count, f"Function Call: {node.func_name}()")
+        self.tab_count += 1
+        for arg in node.args:
+            arg.accept(self)
+        self.tab_count -= 1
+
+    def visit_binary_op_node(self, node):
+        print('\t' * self.tab_count, f"Binary Op: {node.op}")
+        self.tab_count += 1
+        node.left.accept(self)
+        node.right.accept(self)
+        self.tab_count -= 1
+
+    def visit_unary_op_node(self, node):
+        print('\t' * self.tab_count, f"Unary Op: {node.op}")
+        self.tab_count += 1
+        node.operand.accept(self)
+        self.tab_count -= 1
+
+    def visit_cast_node(self, node):
+        print('\t' * self.tab_count, f"Cast to: {node.target_type}")
+        self.tab_count += 1
+        node.expr.accept(self)
+        self.tab_count -= 1
 
     def visit_pad_width_node(self, pad_width_node):
         self.node_count += 1
