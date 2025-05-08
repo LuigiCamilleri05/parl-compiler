@@ -175,10 +175,6 @@ class Lexer:
             self.Tx[43][i] = 42
         set_tx(43, "slash", 44)
 
-        # Shows output 
-        for row in self.Tx:
-            print(row)
-
     # Checks if the state is an accepting state
     def AcceptingStates(self, state):
         try:

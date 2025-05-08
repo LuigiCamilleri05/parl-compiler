@@ -30,5 +30,8 @@ if __name__ == "__main__":
     for i, code in enumerate(test_inputs):
         print(f"\n--- Test {i+1} ---")
         tokens = lexer.GenerateTokens(code)
+        # Shows output 
+        for row in lexer.Tx:
+            print(row)
         for t in tokens:
             print(t.type, t.lexeme)
