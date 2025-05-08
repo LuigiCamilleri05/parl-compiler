@@ -76,6 +76,38 @@ class ASTPrintNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_print_node(self)
 
+class ASTDelayNode(ASTStatementNode):
+    def __init__(self, expr):
+        self.name = "ASTDelayNode"
+        self.expr = expr  
+
+    def accept(self, visitor):
+        visitor.visit_delay_node(self)
+
+class ASTWriteNode(ASTStatementNode):
+    def __init__(self, x_expr, y_expr, val_expr):
+        self.name = "ASTWriteNode"
+        self.x_expr = x_expr
+        self.y_expr = y_expr
+        self.val_expr = val_expr
+
+    def accept(self, visitor):
+        visitor.visit_write_node(self)
+
+
+class ASTWriteBoxNode(ASTStatementNode):
+    def __init__(self, x_expr, y_expr, w_expr, h_expr, val_expr):
+        self.name = "ASTWriteBoxNode"
+        self.x_expr = x_expr
+        self.y_expr = y_expr
+        self.w_expr = w_expr
+        self.h_expr = h_expr
+        self.val_expr = val_expr
+
+    def accept(self, visitor):
+        visitor.visit_write_box_node(self)
+
+
 class ASTFunctionCallNode(ASTExpressionNode):
     def __init__(self, func_name, args):
         self.name = "ASTFunctionCallNode"
@@ -219,6 +251,15 @@ class ASTVisitor:
     def visit_print_node(self, node):
         raise NotImplementedError()
     
+    def visit_delay_node(self, node):
+        raise NotImplementedError()
+    
+    def visit_write_node(self, node):
+        raise NotImplementedError()
+    
+    def visit_write_box_node(self, node):
+        raise NotImplementedError()
+    
     def visit_function_call_node(self, node):
         raise NotImplementedError()
 
@@ -302,6 +343,30 @@ class PrintNodesVisitor(ASTVisitor):
         print('\t' * self.tab_count, "Print Statement =>")
         self.inc_tab_count()
         node.expr.accept(self)
+        self.dec_tab_count()
+
+    def visit_delay_node(self, node):
+        print('\t' * self.tab_count, "Delay Statement =>")
+        self.inc_tab_count()
+        node.expr.accept(self)
+        self.dec_tab_count()
+
+    def visit_write_node(self, node):
+        print('\t' * self.tab_count, "Write Statement =>")
+        self.inc_tab_count()
+        node.x_expr.accept(self)
+        node.y_expr.accept(self)
+        node.val_expr.accept(self)
+        self.dec_tab_count()
+
+    def visit_write_box_node(self, node):
+        print('\t' * self.tab_count, "Write Box Statement =>")
+        self.inc_tab_count()
+        node.x_expr.accept(self)
+        node.y_expr.accept(self)
+        node.w_expr.accept(self)
+        node.h_expr.accept(self)
+        node.val_expr.accept(self)
         self.dec_tab_count()
 
     def visit_function_call_node(self, node):

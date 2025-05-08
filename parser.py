@@ -325,6 +325,53 @@ class Parser:
 
         expr = self.ParseExpression()
         return ast.ASTPrintNode(expr)
+    
+    def ParseDelayStatement(self):
+        if self.crtToken.type != lex.TokenType.kw__delay:
+            raise Exception("Syntax Error: Expected '__delay'")
+        self.NextToken()
+
+        expr = self.ParseExpression()
+        return ast.ASTDelayNode(expr)
+    
+    def ParseWriteStatement(self):
+        if self.crtToken.type == lex.TokenType.kw__write:
+            self.NextToken()
+            x_expr = self.ParseExpression()
+            if self.crtToken.type != lex.TokenType.comma:
+                raise Exception("Syntax Error: Expected ','")
+            self.NextToken()
+            y_expr = self.ParseExpression()
+            if self.crtToken.type != lex.TokenType.comma:
+                raise Exception("Syntax Error: Expected ','")
+            self.NextToken()
+            val_expr = self.ParseExpression()
+            return ast.ASTWriteNode(x_expr, y_expr, val_expr)
+
+        elif self.crtToken.type == lex.TokenType.kw__write_box:
+            self.NextToken()
+            x_expr = self.ParseExpression()
+            if self.crtToken.type != lex.TokenType.comma:
+                raise Exception("Syntax Error: Expected ','")
+            self.NextToken()
+            y_expr = self.ParseExpression()
+            if self.crtToken.type != lex.TokenType.comma:
+                raise Exception("Syntax Error: Expected ','")
+            self.NextToken()
+            w_expr = self.ParseExpression()
+            if self.crtToken.type != lex.TokenType.comma:
+                raise Exception("Syntax Error: Expected ','")
+            self.NextToken()
+            h_expr = self.ParseExpression()
+            if self.crtToken.type != lex.TokenType.comma:
+                raise Exception("Syntax Error: Expected ','")
+            self.NextToken()
+            val_expr = self.ParseExpression()
+            return ast.ASTWriteBoxNode(x_expr, y_expr, w_expr, h_expr, val_expr)
+
+        else:
+            raise Exception("Syntax Error: Expected '__write' or '__write_box'")
+
             
     def ParseStatement(self):
         if (self.crtToken.type == lex.TokenType.kw_let):
@@ -334,9 +381,9 @@ class Parser:
         elif (self.crtToken.type == lex.TokenType.kw__print):
             return self.ParsePrintStatement()
         elif (self.crtToken.type == lex.TokenType.kw__delay):
-            return #TODO
-        elif (self.crtToken.type == lex.TokenType.kw__write):
-            return #TODO
+            return self.ParseDelayStatement()
+        elif self.crtToken.type in [lex.TokenType.kw__write, lex.TokenType.kw__write_box]:
+            return self.ParseWriteStatement()
         elif (self.crtToken.type == lex.TokenType.kw_if):
             return #TODO
         elif (self.crtToken.type == lex.TokenType.kw_for):
@@ -378,7 +425,7 @@ class Parser:
         self.ASTroot = self.ParseProgram()
 
 
-parser = Parser(("__print 1"))
+parser = Parser(("__delay 1; __write 1, 2, #FF0000; __write_box 1;"))
 parser.Parse()
 
 print_visitor = ast.PrintNodesVisitor()
