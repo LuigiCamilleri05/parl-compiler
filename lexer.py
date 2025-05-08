@@ -195,6 +195,8 @@ class Lexer:
                 return Token(self.keywords[lexeme], lexeme)
             elif lexeme in ["true", "false"]:
                 return Token(TokenType.booleanliteral, lexeme)
+            elif lexeme in ["float", "int", "bool", "colour"]:
+                return Token(TokenType.type, lexeme)
             else:
                 return Token(TokenType.identifier, lexeme)
         elif state == 2:

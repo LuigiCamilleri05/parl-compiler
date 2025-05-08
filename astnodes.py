@@ -20,6 +20,14 @@ class ASTVariableNode(ASTExpressionNode):
     def accept(self, visitor):
         visitor.visit_variable_node(self)
 
+class ASTLiteralNode(ASTExpressionNode):
+    def __init__(self, lexeme):
+        self.name = "ASTLiteralNode"
+        self.lexeme = lexeme
+
+    def accept(self, visitor):
+        visitor.visit_literal_node(self)
+
 class ASTIntegerNode(ASTExpressionNode):
     def __init__(self, v):
         self.name = "ASTIntegerNode"
@@ -83,6 +91,16 @@ class ASTPadRandINode(ASTExpressionNode):
     def accept(self, visitor):
         visitor.visit_pad_rand_int_node(self)
 
+class ASTVariableDeclNode(ASTStatementNode):
+    def __init__(self, identifier, vartype, expr):
+        self.name = "ASTVariableDeclNode"
+        self.identifier = identifier  
+        self.vartype = vartype        
+        self.expr = expr              
+
+    def accept(self, visitor):
+        visitor.visit_variable_decl_node(self)
+
 class ASTAssignmentNode(ASTStatementNode):
     def __init__(self, ast_var_node, ast_expression_node):
         self.name = "ASTStatementNode"        
@@ -142,6 +160,9 @@ class ASTVisitor:
         raise NotImplementedError()
     
     def visit_pad_rand_int_node(self, node):
+        raise NotImplementedError()
+
+    def visit_variable_decl_node(self, node):
         raise NotImplementedError()
 
     def visit_assignment_node(self, node):
@@ -216,6 +237,12 @@ class PrintNodesVisitor(ASTVisitor):
         node.expr.accept(self)
         self.tab_count -= 1
 
+    def visit_variable_decl_node(self, var_decl_node):
+        self.node_count += 1
+        print('\t' * self.tab_count, f"Variable Declaration => {var_decl_node.identifier} : {var_decl_node.vartype}")
+        self.tab_count += 1
+        var_decl_node.expr.accept(self)
+        self.tab_count -= 1
 
     def visit_assignment_node(self, ass_node):
         self.node_count += 1

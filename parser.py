@@ -25,6 +25,17 @@ class Parser:
             or self.crtToken.type == lex.TokenType.blockcomment):
             self.NextTokenSkipWS_Comments()
                 
+    def ParseType(self):
+        if self.crtToken.type == lex.TokenType.kw_int :
+            pass
+        elif self.crtToken.type == lex.TokenType.kw_float:
+            pass
+        elif self.crtToken.type == lex.TokenType.kw_bool:
+            pass
+        elif self.crtToken.type == lex.TokenType.kw_colour:
+            pass
+        else:
+            raise Exception("Syntax Error: Expected a type declaration.")
 
     def ParseLiteral(self):
         if self.crtToken.type == lex.TokenType.integer:
@@ -49,6 +60,8 @@ class Parser:
 
         else:
             raise Exception("Syntax Error: Expected a literal.")
+
+    
 
     def ParseExpression(self):
         
@@ -101,6 +114,39 @@ class Parser:
             print(f"Syntax error: Unexpected token {self.crtToken.type}")
             return None
 
+    def ParseVariableDecl(self):
+        # Match 'let'
+        if self.crtToken.type != lex.TokenType.kw_let:
+            raise Exception("Syntax Error: Expected 'let' at start of variable declaration.")
+        self.NextToken()
+
+        # Match identifier
+        if self.crtToken.type != lex.TokenType.identifier:
+            raise Exception("Syntax Error: Expected identifier after 'let'.")
+        identifier = self.crtToken.lexeme
+        self.NextToken()
+
+        # Match ':'
+        if self.crtToken.type != lex.TokenType.colon:
+            raise Exception("Syntax Error: Expected ':' after identifier in declaration.")
+        vartype = self.crtToken.lexeme
+        self.NextToken()
+
+        self.ParseType()
+        vartype = self.crtToken.lexeme
+        self.NextToken()
+
+        # Match '='
+        if self.crtToken.type != lex.TokenType.equals:
+            raise Exception("Syntax Error: Expected '=' in variable declaration.")
+        self.NextToken()
+
+        # Parse the initializer expression
+        expr = self.ParseExpression()
+
+        return ast.ASTVariableDeclNode(identifier, vartype, expr)
+
+
     def ParseAssignment(self):
         #Assignment is made up of two main parts; the LHS (the variable) and RHS (the expression)
         if (self.crtToken.type == lex.TokenType.identifier):
@@ -122,8 +168,30 @@ class Parser:
         return ast.ASTAssignmentNode(assignment_lhs, assignment_rhs)
             
     def ParseStatement(self):
-        #At the moment we only have assignment statements .... you'll need to add more for the assignment - branching depends on the token type
-        return self.ParseAssignment()
+        if (self.crtToken.type == lex.TokenType.kw_let):
+            return self.ParseVariableDecl()
+        elif (self.crtToken.type == lex.TokenType.identifier):
+            return self.ParseAssignment()
+        elif (self.crtToken.type == lex.TokenType.kw__print):
+            return #TODO
+        elif (self.crtToken.type == lex.TokenType.kw__delay):
+            return #TODO
+        elif (self.crtToken.type == lex.TokenType.kw__write):
+            return #TODO
+        elif (self.crtToken.type == lex.TokenType.kw_if):
+            return #TODO
+        elif (self.crtToken.type == lex.TokenType.kw_for):
+            return #TODO
+        elif (self.crtToken.type == lex.TokenType.kw_while):
+            return #TODO
+        elif (self.crtToken.type == lex.TokenType.kw_return):
+            return #TODO
+        elif (self.crtToken.type == lex.TokenType.kw_fun):
+            return #TODO
+        elif self.crtToken.type == lex.TokenType.lbrace:
+            return self.ParseBlock()
+        else:
+            raise Exception(f"Syntax Error: Unexpected token {self.crtToken.type}")
 
     def ParseBlock(self):
         #At the moment we only have assignment statements .... you'll need to add more for the assignment - branching depends on the token type
@@ -143,7 +211,7 @@ class Parser:
         return block
 
     def ParseProgram(self):                        
-        self.NextToken()  #set crtToken to the first token (skip all WS)
+        self.NextToken()  #set crtToken to the first token (skip all WS and comments)
         b = self.ParseBlock()        
         return b        
 
@@ -151,7 +219,7 @@ class Parser:
         self.ASTroot = self.ParseProgram()
 
 
-parser = Parser(("arr[2] = __width;"))
+parser = Parser((" a = 5;"))
 parser.Parse()
 
 print_visitor = ast.PrintNodesVisitor()
