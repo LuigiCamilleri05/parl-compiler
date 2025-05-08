@@ -18,7 +18,7 @@ class ASTVariableNode(ASTExpressionNode):
         self.index_expr = index_expr
 
     def accept(self, visitor):
-        visitor.visit_variable_node(self)
+        return visitor.visit_variable_node(self)
 
 class ASTLiteralNode(ASTExpressionNode):
     def __init__(self, lexeme):
@@ -42,7 +42,7 @@ class ASTIntegerNode(ASTExpressionNode):
         self.value = v
 
     def accept(self, visitor):
-        visitor.visit_integer_node(self)  
+        return visitor.visit_integer_node(self)  
 
 class ASTFloatNode(ASTExpressionNode):
     def __init__(self, v):
@@ -50,7 +50,7 @@ class ASTFloatNode(ASTExpressionNode):
         self.value = v
 
     def accept(self, visitor):
-        visitor.visit_float_node(self)
+        return visitor.visit_float_node(self)
 
 class ASTBooleanNode(ASTExpressionNode):
     def __init__(self, v):
@@ -58,7 +58,7 @@ class ASTBooleanNode(ASTExpressionNode):
         self.value = v
 
     def accept(self, visitor):
-        visitor.visit_boolean_node(self)
+        return visitor.visit_boolean_node(self)
 
 class ASTColourNode(ASTExpressionNode):
     def __init__(self, v):
@@ -66,7 +66,7 @@ class ASTColourNode(ASTExpressionNode):
         self.value = v
 
     def accept(self, visitor):
-        visitor.visit_colour_node(self)
+        return visitor.visit_colour_node(self)
 
 class ASTPrintNode(ASTStatementNode):
     def __init__(self, expr):
@@ -163,7 +163,7 @@ class ASTFunctionCallNode(ASTExpressionNode):
         self.args = args  # list of ASTExpressionNode
 
     def accept(self, visitor):
-        visitor.visit_function_call_node(self)
+        return visitor.visit_function_call_node(self)
 
 
 class ASTBinaryOpNode(ASTExpressionNode):
@@ -174,7 +174,7 @@ class ASTBinaryOpNode(ASTExpressionNode):
         self.right = right        # ASTExpressionNode
 
     def accept(self, visitor):
-        visitor.visit_binary_op_node(self)
+        return visitor.visit_binary_op_node(self)
 
 class ASTUnaryOpNode(ASTExpressionNode):
     def __init__(self, op, operand):
@@ -183,7 +183,7 @@ class ASTUnaryOpNode(ASTExpressionNode):
         self.operand = operand    # ASTExpressionNode
 
     def accept(self, visitor):
-        visitor.visit_unary_op_node(self)
+        return visitor.visit_unary_op_node(self)
 
 class ASTCastNode(ASTExpressionNode):
     def __init__(self, expr, target_type):
@@ -192,7 +192,7 @@ class ASTCastNode(ASTExpressionNode):
         self.target_type = target_type  # string, e.g., "float", "int", etc.
 
     def accept(self, visitor):
-        visitor.visit_cast_node(self)
+        return visitor.visit_cast_node(self)
 
 class ASTArrayDeclNode(ASTStatementNode):
     def __init__(self, identifier, vartype, size_expr, values):
@@ -210,14 +210,14 @@ class ASTPadWidthNode(ASTExpressionNode):
         self.name = "ASTPadWidthNode"
 
     def accept(self, visitor):
-        visitor.visit_pad_width_node(self)
+        return visitor.visit_pad_width_node(self)
 
 class ASTPadHeightNode(ASTExpressionNode):
     def __init__(self):
         self.name = "ASTPadHeightNode"
 
     def accept(self, visitor):
-        visitor.visit_pad_height_node(self)
+        return visitor.visit_pad_height_node(self)
 
 class ASTPadReadNode(ASTExpressionNode):
     def __init__(self, expr1, expr2):
@@ -226,7 +226,7 @@ class ASTPadReadNode(ASTExpressionNode):
         self.expr2 = expr2
 
     def accept(self, visitor):
-        visitor.visit_pad_read_node(self)
+        return visitor.visit_pad_read_node(self)
 
 
 class ASTPadRandINode(ASTExpressionNode):
@@ -235,7 +235,7 @@ class ASTPadRandINode(ASTExpressionNode):
         self.expr = expr
 
     def accept(self, visitor):
-        visitor.visit_pad_rand_int_node(self)
+        return visitor.visit_pad_rand_int_node(self)
 
 class ASTVariableDeclNode(ASTStatementNode):
     def __init__(self, identifier, vartype, expr):
@@ -451,7 +451,7 @@ class PrintNodesVisitor(ASTVisitor):
         self.dec_tab_count()
 
     def visit_for_node(self, node):
-        print("FOR Statement =>")
+        print("\t" * self.tab_count + "FOR Statement =>")
         self.inc_tab_count()
         
         if node.init:
@@ -479,7 +479,7 @@ class PrintNodesVisitor(ASTVisitor):
         self.dec_tab_count()
 
     def visit_while_node(self, node):
-        print("WHILE Statement =>")
+        print("\t" * self.tab_count + "WHILE Statement =>")
         self.inc_tab_count()
 
         print("\t" * self.tab_count + "Condition:")
