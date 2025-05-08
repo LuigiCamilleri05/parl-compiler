@@ -145,6 +145,17 @@ class ASTRtrnNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_rtrn_node(self)
 
+class ASTFunctionDeclNode(ASTNode):
+    def __init__(self, name, params, return_type, return_size, body):
+        self.name = name
+        self.params = params  
+        self.return_type = return_type
+        self.return_size = return_size  
+        self.body = body
+
+    def accept(self, visitor):
+        return visitor.visit_function_decl_node(self)
+
 class ASTFunctionCallNode(ASTExpressionNode):
     def __init__(self, func_name, args):
         self.name = "ASTFunctionCallNode"
@@ -307,6 +318,9 @@ class ASTVisitor:
         raise NotImplementedError()
     
     def visit_rtrn_node(self, node):
+        raise NotImplementedError()
+    
+    def visit_function_decl_node(self, node):
         raise NotImplementedError()
     
     def visit_function_call_node(self, node):
@@ -485,6 +499,41 @@ class PrintNodesVisitor(ASTVisitor):
         self.inc_tab_count()
         node.expr.accept(self)
         self.dec_tab_count()
+
+    def visit_function_decl_node(self, node):
+        print('\t' * self.tab_count + "Function Declaration =>")
+        self.inc_tab_count()
+
+        print('\t' * self.tab_count + f"Name: {node.name}")
+
+        print('\t' * self.tab_count + "Parameters:")
+        self.inc_tab_count()
+        for name, typ, size in node.params:
+            if size:
+                print('\t' * self.tab_count + f"{name} : {typ} [", end="")
+                self.inc_tab_count()
+                size.accept(self)
+                self.dec_tab_count()
+                print('\t' * self.tab_count + "]")
+            else:
+                print('\t' * self.tab_count + f"{name} : {typ}")
+        self.dec_tab_count()
+
+        print('\t' * self.tab_count + f"Return Type: {node.return_type}")
+        if node.return_size:
+            print('\t' * self.tab_count + "Return Size: [")
+            self.inc_tab_count()
+            node.return_size.accept(self)
+            self.dec_tab_count()
+            print('\t' * self.tab_count + "]")
+
+        print('\t' * self.tab_count + "Body:")
+        self.inc_tab_count()
+        node.body.accept(self)
+        self.dec_tab_count()
+
+        self.dec_tab_count()
+    
 
     def visit_function_call_node(self, node):
         print('\t' * self.tab_count, f"Function Call: {node.func_name}()")

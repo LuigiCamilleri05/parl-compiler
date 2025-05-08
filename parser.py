@@ -458,6 +458,81 @@ class Parser:
 
         expr = self.ParseExpression()
         return ast.ASTRtrnNode(expr)
+    
+    def ParseFormalParam(self):
+        if self.crtToken.type != lex.TokenType.identifier:
+            raise Exception("Expected identifier in parameter list")
+        name = self.crtToken.lexeme
+        self.NextToken()
+
+        if self.crtToken.type != lex.TokenType.colon:
+            raise Exception("Expected ':' after parameter name")
+        self.NextToken()
+
+        param_type = self.ParseType()
+        size = None
+
+        if self.crtToken.type == lex.TokenType.lbracket:
+            self.NextToken()
+            if self.crtToken.type != lex.TokenType.integer:
+                raise Exception("Expected integer size for array parameter")
+            size = self.crtToken.lexeme
+            self.NextToken()
+            if self.crtToken.type != lex.TokenType.rbracket:
+                raise Exception("Expected ']' after array size")
+            self.NextToken()
+
+        return (name, param_type, size)
+    
+    def ParseFormalParams(self):
+        params = [self.ParseFormalParam()]
+        while self.crtToken.type == lex.TokenType.comma:
+            self.NextToken()
+            params.append(self.ParseFormalParam())
+        return params
+
+    def ParseFunctionDecl(self):
+        if self.crtToken.type != lex.TokenType.kw_fun:
+            raise Exception("Syntax Error: Expected 'fun' at start of function declaration")
+        self.NextToken()
+
+        if self.crtToken.type != lex.TokenType.identifier:
+            raise Exception("Expected function name after 'fun'")
+        name = self.crtToken.lexeme
+        self.NextToken()
+
+        if self.crtToken.type != lex.TokenType.lparen:
+            raise Exception("Expected '(' after function name")
+        self.NextToken()
+
+        params = []
+        if self.crtToken.type != lex.TokenType.rparen:
+            params = self.ParseFormalParams()
+
+        if self.crtToken.type != lex.TokenType.rparen:
+            raise Exception("Expected ')' after parameters")
+        self.NextToken()
+
+        if self.crtToken.type != lex.TokenType.arrow:
+            raise Exception("Expected '->' for return type")
+        self.NextToken()
+
+        return_type = self.ParseType()
+        return_size = None
+
+        if self.crtToken.type == lex.TokenType.lbracket:
+            self.NextToken()
+            if self.crtToken.type != lex.TokenType.integer:
+                raise Exception("Expected size inside return type brackets")
+            return_size = self.crtToken.lexeme
+            self.NextToken()
+            if self.crtToken.type != lex.TokenType.rbracket:
+                raise Exception("Expected ']' after return size")
+            self.NextToken()
+
+        body = self.ParseBlock()
+        return ast.ASTFunctionDeclNode(name, params, return_type, return_size, body)
+
 
 
     def ExpectSemicolon(self):
@@ -498,7 +573,7 @@ class Parser:
             self.ExpectSemicolon()
             return stmt
         elif (self.crtToken.type == lex.TokenType.kw_fun):
-            return #TODO
+            return self.ParseFunctionDecl()
         elif self.crtToken.type == lex.TokenType.lbrace:
             return self.ParseBlock()
         else:
@@ -536,10 +611,10 @@ class Parser:
 
 
 parser = Parser(("""
-
-return 0; // This is a comment
-return 0;
-
+fun add(a: int, b: int) -> int {
+    let result: int = a + b;
+    __print result;
+}
 """))
 parser.Parse()
 
