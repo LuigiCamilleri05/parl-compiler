@@ -207,6 +207,37 @@ test_programs = [
     let c : colour = #00FF00;
     let x : bool = c as bool;
     """,
+        # __width and __height used as int values
+    """
+    let w : int = __width;
+    let h : int = __height;
+    """,
+
+    # __read with correct argument types
+    """
+    let x : int = 10;
+    let y : int = 20;
+    let c : colour = __read x, y;
+    """,
+
+    # __read with incorrect argument type
+    """
+    let f : float = 3.14;
+    let c : colour = __read f, 2;
+    """,
+
+    # __random_int with valid int argument
+    """
+    let upper : int = 100;
+    let rand : int = __random_int(upper);
+    """,
+
+    # __random_int with invalid (e.g., bool) argument
+    """
+    let b : bool = true;
+    let rand : int = __random_int(b);
+    """,
+
 
 ]
 

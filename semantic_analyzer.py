@@ -43,6 +43,33 @@ class SemanticAnalyzer:
 
     def visit_variable_node(self, node):
         return self.symbol_table.lookup(node.lexeme)
+    
+    def visit_pad_width_node(self, node):
+        # PAD width is always an integer
+        return "int"
+
+    def visit_pad_height_node(self, node):
+        # PAD height is always an integer
+        return "int"
+
+    def visit_pad_read_node(self, node):
+        # Both x and y coordinates must be int
+        x_type = node.expr1.accept(self)
+        y_type = node.expr2.accept(self)
+
+        if x_type != "int":
+            raise Exception(f"Type Error: __read expects int for x, got {x_type}")
+        if y_type != "int":
+            raise Exception(f"Type Error: __read expects int for y, got {y_type}")
+
+        return "colour"  # __read returns a colour value
+
+    def visit_pad_rand_int_node(self, node):
+        bound_type = node.expr.accept(self)
+        if bound_type != "int":
+            raise Exception(f"Type Error: __random_int expects an int, got {bound_type}")
+        return "int"
+
 
     def visit_integer_node(self, node):
         return "int"
