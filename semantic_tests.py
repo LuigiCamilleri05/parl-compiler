@@ -90,6 +90,49 @@ test_programs = [
     """
     let x : bool = true;
     let y : int = -x;
+    """,
+
+    # __print with valid int expression
+    """
+    let x : int = 5;
+    __print x;
+    """,
+
+    # __delay with valid int expression
+    """
+    let delayMs : int = 1000;
+    __delay delayMs;
+    """,
+
+    # __write with correct argument types (int, int, colour)
+    """
+    let x : int = 10;
+    let y : int = 20;
+    __write x, y, #FF00FF;
+    """,
+
+    # ❌ __write with incorrect type (e.g., colour used as x)
+    """
+    let c : colour = #FF00FF;
+    __write c, 20, #00FF00;
+    """,
+
+    # __write_box with correct argument types
+    """
+    let x : int = 0;
+    let y : int = 0;
+    let w : int = 1;
+    let h : int = 1;
+    __write_box x, y, w, h, #00FF00;
+    """,
+
+    # ❌ __write_box with incorrect value type
+    """
+    let x : int = 0;
+    let y : int = 0;
+    let w : int = 1;
+    let h : int = 1;
+    __write_box x, y, w, h, 42;
     """
 
 ]

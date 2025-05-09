@@ -191,6 +191,41 @@ class SemanticAnalyzer:
 
         self.symbol_table.exit_scope()
 
+    def visit_print_node(self, node):
+        # No specific type requirement for print — any type is fine
+        node.expr.accept(self)
+
+    def visit_delay_node(self, node):
+        delay_type = node.expr.accept(self)
+        if delay_type != "int":
+            raise Exception(f"Type Error: __delay expects 'int', got '{delay_type}'")
+
+    def visit_write_node(self, node):
+        x_type = node.x_expr.accept(self)
+        y_type = node.y_expr.accept(self)
+        val_type = node.val_expr.accept(self)
+
+        if x_type != "int":
+            raise Exception(f"Type Error: __write expects int for x, got '{x_type}'")
+        if y_type != "int":
+            raise Exception(f"Type Error: __write expects int for y, got '{y_type}'")
+        if val_type != "colour":
+            raise Exception(f"Type Error: __write expects colour value, got '{val_type}'")
+        
+    def visit_write_box_node(self, node):
+        x_type = node.x_expr.accept(self)
+        y_type = node.y_expr.accept(self)
+        w_type = node.w_expr.accept(self)
+        h_type = node.h_expr.accept(self)
+        val_type = node.val_expr.accept(self)
+
+        for label, typ in zip(["x", "y", "width", "height"], [x_type, y_type, w_type, h_type]):
+            if typ != "int":
+                raise Exception(f"Type Error: __write_box expects int for {label}, got '{typ}'")
+
+        if val_type != "colour":
+            raise Exception(f"Type Error: __write_box expects colour value, got '{val_type}'")
+
 
     def error(self, message):
         raise Exception(f"Semantic Error: {message}")
