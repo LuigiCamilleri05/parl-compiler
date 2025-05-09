@@ -38,7 +38,14 @@ test_programs = [
     fun wrong() -> int {
         return true;
     }
+    """,
+
     """
+    let x : int = 0;
+    while (x < 10) {
+        x = x + 1;
+    }
+    """,
 ]
 
 for i, code in enumerate(test_programs):

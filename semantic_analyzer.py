@@ -63,9 +63,25 @@ class SemanticAnalyzer:
     def visit_binary_op_node(self, node):
         left_type = node.left.accept(self)
         right_type = node.right.accept(self)
+
         if left_type != right_type:
             raise Exception(f"Type Error: Mismatched operands: {left_type} and {right_type}")
-        return left_type
+
+        if node.op in ["+", "-", "*", "/"]:
+            if left_type not in ["int", "float"]:
+                raise Exception(f"Type Error: Arithmetic operator '{node.op}' requires int or float operands")
+            return left_type
+
+        elif node.op in ["<", ">", "<=", ">=", "==", "!="]:
+            return "bool"  # Comparison always returns bool
+
+        elif node.op in ["and", "or"]:
+            if left_type != "bool":
+                raise Exception(f"Type Error: Logical operator '{node.op}' requires bool operands")
+            return "bool"
+
+        else:
+            raise Exception(f"Semantic Error: Unknown binary operator '{node.op}'")
 
     def visit_unary_op_node(self, node):
         operand_type = node.operand.accept(self)
@@ -129,6 +145,22 @@ class SemanticAnalyzer:
                 self.error(f"In call to '{node.func_name}', expected type '{param_type}' for argument '{param_name}', got '{arg_type}'.")
 
         return func_entry['return_type']
+    
+    def visit_while_node(self, node):
+        # Check condition expression type
+        condition_type = node.condition.accept(self)
+        if condition_type != "bool":
+            self.error(f"Type Error: While loop condition must be 'bool', got '{condition_type}'")
+
+        # Enter loop body scope and analyze contents
+        self.symbol_table.enter_scope()
+        node.body.accept(self)
+        self.symbol_table.exit_scope()
+
+    def error(self, message):
+        raise Exception(f"Semantic Error: {message}")
+    
+    
 
     # You would also implement other node visit methods as needed, like for loops, while, cast, etc.
 
