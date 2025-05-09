@@ -33,7 +33,6 @@ test_programs = [
     let x : int = addOne(5);
     """,
 
-    # Function returns wrong type
     """
     fun wrong() -> int {
         return true;
@@ -46,6 +45,53 @@ test_programs = [
         x = x + 1;
     }
     """,
+
+    """
+    for (let i : int = 0; i < 10; i = i + 1) {
+        i = i + 1;
+    }
+    """,
+
+    """
+    let flag : bool = true;
+    let i : int = 0;
+    if (flag) {
+        i = 1;
+    } else {
+        i = 0;
+    }
+    """,
+
+    # Logical NOT on a boolean
+    """
+    let x : bool = true;
+    let y : bool = not x;
+    """,
+
+    # Unary minus on an integer
+    """
+    let x : int = 5;
+    let y : int = -x;
+    """,
+
+    # Unary minus on a float
+    """
+    let x : float = 3.14;
+    let y : float = -x;
+    """,
+
+    # NOT on an int — should fail
+    """
+    let x : int = 5;
+    let y : bool = not x;
+    """,
+
+    # Unary minus on a boolean — should fail
+    """
+    let x : bool = true;
+    let y : int = -x;
+    """
+
 ]
 
 for i, code in enumerate(test_programs):

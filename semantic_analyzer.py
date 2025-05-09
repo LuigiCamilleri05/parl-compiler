@@ -85,7 +85,19 @@ class SemanticAnalyzer:
 
     def visit_unary_op_node(self, node):
         operand_type = node.operand.accept(self)
-        return operand_type
+
+        if node.op == "not":
+            if operand_type != "bool":
+                raise Exception("Type Error: 'not' operator requires a boolean operand")
+            return "bool"
+
+        elif node.op == "-":
+            if operand_type not in {"int", "float"}:
+                raise Exception("Type Error: Unary '-' operator requires int or float operand")
+            return operand_type
+
+        else:
+            raise Exception(f"Semantic Error: Unknown unary operator '{node.op}'")
 
     def visit_if_node(self, node):
         cond_type = node.condition_expr.accept(self)
@@ -156,6 +168,29 @@ class SemanticAnalyzer:
         self.symbol_table.enter_scope()
         node.body.accept(self)
         self.symbol_table.exit_scope()
+
+    def visit_for_node(self, node):
+        self.symbol_table.enter_scope()
+
+        # Check optional initializer (must be a variable declaration)
+        if node.init:
+            node.init.accept(self)
+
+        # Check condition (must return bool)
+        if node.condition:
+            cond_type = node.condition.accept(self)
+            if cond_type != "bool":
+                raise Exception(f"Type Error: for-loop condition must be 'bool', got '{cond_type}'")
+
+        # Check optional update (e.g., assignment)
+        if node.update:
+            node.update.accept(self)
+
+        # Visit loop body
+        node.body.accept(self)
+
+        self.symbol_table.exit_scope()
+
 
     def error(self, message):
         raise Exception(f"Semantic Error: {message}")
