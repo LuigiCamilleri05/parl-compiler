@@ -157,6 +157,16 @@ test_programs = [
     }
     """,
 
+    # Missing return in non-void function (should fail)
+    """
+    fun test(n: int) -> int {
+        if (n < 10) {
+            return n;
+        }
+        // No return here!
+    }
+    """,
+
     # Return outside of function
     """
     return 5;

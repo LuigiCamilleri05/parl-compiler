@@ -1,3 +1,5 @@
+from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode
+
 class SymbolTable:
     def __init__(self):
         self.scopes = [{}]  # list of dictionaries, one per scope
@@ -130,6 +132,9 @@ class SemanticAnalyzer:
         self.current_return_type = node.return_type
         node.body.accept(self)
 
+        if not self.does_block_always_return(node.body):
+            raise Exception(f"Semantic Error: Function '{node.name}' may not return a value on all paths.")
+
         self.symbol_table.exit_scope()
 
     def visit_function_call_node(self, node):
@@ -235,6 +240,26 @@ class SemanticAnalyzer:
             raise Exception(
                 f"Type Error: Return type '{expr_type}' does not match expected function return type '{self.current_return_type}'"
             )
+
+    def does_block_always_return(self, block_node):
+        """
+        Determines whether all control paths in this block lead to a return.
+        """
+        for stmt in block_node.stmts:
+            if isinstance(stmt, ASTRtrnNode):
+                return True
+            elif isinstance(stmt, ASTIfNode):
+                then_returns = self.does_block_always_return(stmt.then_block)
+                else_returns = self.does_block_always_return(stmt.else_block) if stmt.else_block else False
+                if then_returns and else_returns:
+                    return True
+            elif isinstance(stmt, ASTWhileNode):
+                # Loops might not run, so we can't guarantee a return
+                continue
+            elif isinstance(stmt, ASTBlockNode):
+                if self.does_block_always_return(stmt):
+                    return True
+        return False
 
 
     def error(self, message):
