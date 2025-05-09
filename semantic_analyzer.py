@@ -109,11 +109,6 @@ class SemanticAnalyzer:
         if node.else_block:
             node.else_block.accept(self)
 
-    def visit_rtrn_node(self, node):
-        expr_type = node.expr.accept(self)
-        if expr_type != self.current_return_type:
-            raise Exception(f"Type Error: Return type {expr_type} does not match function return type {self.current_return_type}")
-
     def visit_function_decl_node(self, node):
         # Store function signature in the global scope
         self.symbol_table.declare(node.name, {
