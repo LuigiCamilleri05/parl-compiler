@@ -133,7 +133,34 @@ test_programs = [
     let w : int = 1;
     let h : int = 1;
     __write_box x, y, w, h, 42;
+    """,
+     # Valid return type
     """
+    fun getVal() -> int {
+        return 5;
+    }
+    """,
+
+    # Return type mismatch
+    """
+    fun getBool() -> bool {
+        return 42;
+    }
+    """,
+
+    # Missing return (should pass unless return required to be explicit in every path)
+    """
+    fun missingReturn() -> int {
+        if (true) {
+            return 1;
+        }
+    }
+    """,
+
+    # Return outside of function
+    """
+    return 5;
+    """,
 
 ]
 

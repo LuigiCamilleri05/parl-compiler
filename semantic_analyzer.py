@@ -226,6 +226,16 @@ class SemanticAnalyzer:
         if val_type != "colour":
             raise Exception(f"Type Error: __write_box expects colour value, got '{val_type}'")
 
+    def visit_rtrn_node(self, node):
+        if self.current_return_type is None:
+            raise Exception("Semantic Error: 'return' statement outside of function.")
+
+        expr_type = node.expr.accept(self)
+        if expr_type != self.current_return_type:
+            raise Exception(
+                f"Type Error: Return type '{expr_type}' does not match expected function return type '{self.current_return_type}'"
+            )
+
 
     def error(self, message):
         raise Exception(f"Semantic Error: {message}")
