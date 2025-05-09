@@ -100,6 +100,25 @@ class SemanticAnalyzer:
 
         else:
             raise Exception(f"Semantic Error: Unknown unary operator '{node.op}'")
+        
+    def visit_cast_node(self, node):
+        expr_type = node.expr.accept(self)
+        target_type = node.target_type
+
+        valid_types = {"int", "float", "bool", "colour"}
+        if target_type not in valid_types:
+            raise Exception(f"Type Error: Unknown cast target type '{target_type}'")
+
+        # Disallow only nonsense conversions (like colour <-> bool)
+        disallowed_casts = {
+            ("bool", "colour"), ("colour", "bool")
+        }
+
+        if (expr_type, target_type) in disallowed_casts:
+            raise Exception(f"Type Error: Cannot cast from {expr_type} to {target_type}")
+
+        return target_type
+
 
     def visit_if_node(self, node):
         cond_type = node.condition_expr.accept(self)

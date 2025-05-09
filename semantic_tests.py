@@ -172,6 +172,42 @@ test_programs = [
     return 5;
     """,
 
+    # Valid cast from int to float
+    """
+    let x : int = 5;
+    let y : float = x as float;
+    """,
+
+    # Valid cast from float to int
+    """
+    let x : float = 3.14;
+    let y : int = x as int;
+    """,
+
+    # Valid cast from bool to int
+    """
+    let x : bool = true;
+    let y : int = x as int;
+    """,
+
+    # Valid cast from int to colour
+    """
+    let x : int = 255;
+    let y : colour = x as colour;
+    """,
+
+    # Invalid cast to unknown type
+    """
+    let x : int = 1;
+    let y : foo = x as foo;
+    """,
+
+    # Invalid cast from colour to bool
+    """
+    let c : colour = #00FF00;
+    let x : bool = c as bool;
+    """,
+
 ]
 
 for i, code in enumerate(test_programs):

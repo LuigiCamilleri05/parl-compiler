@@ -350,9 +350,6 @@ class ASTVisitor:
     def visit_pad_rand_int_node(self, node):
         raise NotImplementedError()
 
-    def visit_variable_decl_node(self, node):
-        raise NotImplementedError()
-
     def visit_assignment_node(self, node):
         raise NotImplementedError()
     
