@@ -277,8 +277,6 @@ class ASTProgramNode(ASTNode):
 
     def accept(self, visitor):
         visitor.visit_program_node(self)
-        for stmt in self.stmts:
-            stmt.accept(visitor)
 
 class ASTVisitor:
     def visit_integer_node(self, node):
@@ -623,3 +621,7 @@ class PrintNodesVisitor(ASTVisitor):
             st.accept(self)
         
         self.dec_tab_count()
+
+    def visit_program_node(self, node):
+        for stmt in node.stmts:
+            stmt.accept(self)
