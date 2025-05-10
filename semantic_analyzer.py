@@ -6,6 +6,12 @@ class SemanticAnalyzer:
         self.symbol_table = SymbolTable()
         self.current_return_type = None
 
+    def visit_program_node(self, node):
+        self.symbol_table.enter_scope()
+        for stmt in node.stmts:
+            stmt.accept(self)
+        self.symbol_table.exit_scope()
+
     def visit_block_node(self, node):
         self.symbol_table.enter_scope()
         for stmt in node.stmts:
