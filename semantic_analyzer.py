@@ -156,6 +156,10 @@ class SemanticAnalyzer:
             node.else_block.accept(self)
 
     def visit_function_decl_node(self, node):
+        # Ensure function is declared at top level (global scope)
+        if len(self.symbol_table.scopes) != 2: # 2 scopes: global and function
+            raise Exception("Semantic Error: Functions must be declared in the global scope.")
+
         # Store function signature in the global scope
         self.symbol_table.declare(node.name, {
             'type': node.return_type,
@@ -305,9 +309,3 @@ class SemanticAnalyzer:
 
     def error(self, message):
         raise Exception(f"Semantic Error: {message}")
-    
-    
-
-    # You would also implement other node visit methods as needed, like for loops, while, cast, etc.
-
-    # Helper: for all `accept()` calls, the return value should be the inferred type where relevant
