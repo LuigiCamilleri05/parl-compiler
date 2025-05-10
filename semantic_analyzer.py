@@ -1,26 +1,5 @@
 from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode
-
-class SymbolTable:
-    def __init__(self):
-        self.scopes = [{}]  # list of dictionaries, one per scope
-
-    def enter_scope(self):
-        self.scopes.append({})
-
-    def exit_scope(self):
-        self.scopes.pop()
-
-    def declare(self, name, typ):
-        if name in self.scopes[-1]:
-            raise Exception(f"Semantic Error: Variable '{name}' already declared in this scope.")
-        self.scopes[-1][name] = typ
-
-    def lookup(self, name):
-        for scope in reversed(self.scopes):
-            if name in scope:
-                return scope[name]
-        raise Exception(f"Semantic Error: Variable '{name}' used before declaration.")
-
+from symbol_table import SymbolTable
 
 class SemanticAnalyzer:
     def __init__(self):
@@ -42,7 +21,8 @@ class SemanticAnalyzer:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
 
     def visit_variable_node(self, node):
-        return self.symbol_table.lookup(node.lexeme)
+        var_type, _, _, = self.symbol_table.lookup(node.lexeme)
+        return var_type
     
     def visit_pad_width_node(self, node):
         # PAD width is always an integer
@@ -184,7 +164,7 @@ class SemanticAnalyzer:
 
     def visit_function_call_node(self, node):
         # Check if function is declared
-        func_entry = self.symbol_table.lookup(node.func_name)
+        func_entry, _, _ = self.symbol_table.lookup(node.func_name)
         if func_entry is None:
             self.error(f"Function '{node.func_name}' not declared before use.")
             return None
