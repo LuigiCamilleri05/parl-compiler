@@ -1,47 +1,11 @@
-from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode
+from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode, ASTVariableDeclNode, ASTFunctionDeclNode
+from symbol_table import SymbolTable
 
-class CodGenSymbolTable:
+class CodeGenerator:
     def __init__(self):
-        self.scopes = []  # Starts empty since global scope needs to be created first
-        self.level = -1   # global is level 0, -1 means no scopes yet
-
-    def enter_scope(self):
-        self.level += 1
-        self.scopes.append({
-            "symbols": {},        # Maps var name → (type, index, level)
-            "next_index": 0       # Tracks next available index in this frame
-        })
-
-    def exit_scope(self):
-        self.scopes.pop()
-        self.level -= 1
-
-    def declare(self, name, var_type):
-        current_scope = self.scopes[-1]
-        symbols = current_scope["symbols"]
-        if name in symbols:
-            raise Exception(f"Semantic Error: Variable '{name}' already declared in this scope.")
-
-        index = current_scope["next_index"]
-        current_scope["next_index"] += 1
-
-        symbols[name] = (var_type, index, self.level)
-        return (self.level, index)
-
-    def lookup(self, name):
-        # Start from the most recent scope and go backwards
-        # Changed since we need to check index aswell
-        for i in range(len(self.scopes)-1, -1, -1): 
-            symbols = self.scopes[i]["symbols"]
-            if name in symbols:
-                return symbols[name]  # (type, index, level)
-        raise Exception(f"Semantic Error: Variable '{name}' used before declaration.")
-
-
-class Code_Generator:
-    def __init__(self):
-        self.symbol_table = CodGenSymbolTable()
+        self.symbol_table = SymbolTable()
         self.current_return_type = None
+        self.instructions = []
 
     def visit_block_node(self, node):
         self.symbol_table.enter_scope()
@@ -56,7 +20,10 @@ class Code_Generator:
         expr_type = node.expr.accept(self)
         if expr_type != var_type:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
-
+        _, index, level = self.symbol_table.lookup(node.identifier)
+        self.emit(f"push {index}")
+        self.emit(f"push {level}")
+        self.emit("st")
     def visit_variable_node(self, node):
         return self.symbol_table.lookup(node.lexeme)
     
@@ -88,15 +55,24 @@ class Code_Generator:
 
 
     def visit_integer_node(self, node):
+        self.emit(f"push {node.value}")
         return "int"
 
     def visit_float_node(self, node):
+        self.emit(f"push {node.value}")
         return "float"
 
     def visit_boolean_node(self, node):
+        if node.value:
+            self.emit("push 1")
+        else:
+            self.emit("push 0")
         return "bool"
 
     def visit_colour_node(self, node):
+        # Strip "#" and convert hex to int
+        colour_int = int(node.value.lstrip("#"), 16)
+        self.emit(f"push {colour_int}")
         return "colour"
 
     def visit_assignment_node(self, node):
@@ -301,6 +277,42 @@ class Code_Generator:
             raise Exception(
                 f"Type Error: Return type '{expr_type}' does not match expected function return type '{self.current_return_type}'"
             )
+        
+    def visit_program_node(self, node):
+        self.symbol_table.enter_scope()
+
+        func_decls = []
+        main_stmts = []
+
+        for stmt in node.stmts:
+            if isinstance(stmt, ASTFunctionDeclNode):
+                func_decls.append(stmt)
+            else:
+                main_stmts.append(stmt) 
+
+        # Emit PArIR .main entry
+        self.emit(".main")
+        self.emit("push 4")
+        self.emit("jmp")
+        self.emit("halt")
+
+        # Emit stack frame setup for main block
+        num_main_vars = sum(isinstance(s, ASTVariableDeclNode) for s in main_stmts)
+        self.emit(f"push {num_main_vars}")
+        self.emit("oframe")
+
+        for stmt in main_stmts:
+            stmt.accept(self)
+
+        self.emit("cframe")
+        self.symbol_table.exit_scope()
+        self.emit("halt")
+
+        # Emit code for function declarations
+        for func in func_decls:
+            self.emit(f".{func.name}")
+            func.accept(self)
+
 
     def does_block_always_return(self, block_node):
         """
@@ -321,7 +333,9 @@ class Code_Generator:
                 if self.does_block_always_return(stmt):
                     return True
         return False
-
+    
+    def emit(self, instr):
+        self.instructions.append(instr)
 
     def error(self, message):
         raise Exception(f"Semantic Error: {message}")
