@@ -599,7 +599,7 @@ class Parser:
 
     def ParseProgram(self):
         self.NextToken()
-        program = ast.ASTBlockNode()
+        program = ast.ASTProgramNode()
         while self.crtToken.type != lex.TokenType.end:
             stmt = self.ParseStatement()
             if stmt:
