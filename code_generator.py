@@ -2,23 +2,39 @@ from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode
 
 class CodGenSymbolTable:
     def __init__(self):
-        self.scopes = [{}]  # list of dictionaries, one per scope
+        self.scopes = []  # Starts empty since global scope needs to be created first
+        self.level = -1   # global is level 0, -1 means no scopes yet
 
     def enter_scope(self):
-        self.scopes.append({})
+        self.level += 1
+        self.scopes.append({
+            "symbols": {},        # Maps var name → (type, index, level)
+            "next_index": 0       # Tracks next available index in this frame
+        })
 
     def exit_scope(self):
         self.scopes.pop()
+        self.level -= 1
 
-    def declare(self, name, typ):
-        if name in self.scopes[-1]:
+    def declare(self, name, var_type):
+        current_scope = self.scopes[-1]
+        symbols = current_scope["symbols"]
+        if name in symbols:
             raise Exception(f"Semantic Error: Variable '{name}' already declared in this scope.")
-        self.scopes[-1][name] = typ
+
+        index = current_scope["next_index"]
+        current_scope["next_index"] += 1
+
+        symbols[name] = (var_type, index, self.level)
+        return (self.level, index)
 
     def lookup(self, name):
-        for scope in reversed(self.scopes):
-            if name in scope:
-                return scope[name]
+        # Start from the most recent scope and go backwards
+        # Changed since we need to check index aswell
+        for i in range(len(self.scopes)-1, -1, -1): 
+            symbols = self.scopes[i]["symbols"]
+            if name in symbols:
+                return symbols[name]  # (type, index, level)
         raise Exception(f"Semantic Error: Variable '{name}' used before declaration.")
 
 
