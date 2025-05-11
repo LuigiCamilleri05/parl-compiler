@@ -83,7 +83,33 @@ test_inputs = [
 
     # Negate floats
     "__print -3.14;",
-    "let y: float = 2.5; __print -y;"
+    "let y: float = 2.5; __print -y;",
+
+    # Test Block Scope
+    """
+    {
+    let x : int = 1;
+    let y : float = 2.5;
+    let z : bool = true;
+    }
+    """,
+    # Test emplty block
+    """
+    {
+    }
+    """,
+    # Test nested blocks
+    """
+    {
+        let x : int = 1;
+        {
+            let y : float = 2.5;
+            {
+                let z : bool = true;
+            }
+        }
+    }
+    """,
 
 
 ]

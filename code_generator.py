@@ -9,8 +9,15 @@ class CodeGenerator:
 
     def visit_block_node(self, node):
         self.symbol_table.enter_scope()
+
+        num_vars = sum(isinstance(stmt, ASTVariableDeclNode) for stmt in node.stmts)
+        self.emit(f"push {num_vars}")
+        self.emit("oframe")
+
         for stmt in node.stmts:
             stmt.accept(self)
+
+        self.emit("cframe")
         self.symbol_table.exit_scope()
 
     def visit_variable_decl_node(self, node):
@@ -377,7 +384,6 @@ class CodeGenerator:
         for func in func_decls:
             self.emit(f".{func.name}")
             func.accept(self)
-
 
     def does_block_always_return(self, block_node):
         """
