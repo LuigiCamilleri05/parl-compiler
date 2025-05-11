@@ -272,24 +272,27 @@ class CodeGenerator:
         self.symbol_table.exit_scope()
 
     def visit_print_node(self, node):
-        # No specific type requirement for print — any type is fine
+        # No specific type requirement for print
         node.expr.accept(self)
+        self.emit("print")
 
     def visit_delay_node(self, node):
         delay_type = node.expr.accept(self)
         if delay_type != "int":
             raise Exception(f"Type Error: __delay expects 'int', got '{delay_type}'")
+        self.emit("delay")
         
     def visit_clear_node(self, node):
         clear_type = node.expr.accept(self)
         if clear_type != "colour":
             raise Exception(f"Type Error: __clear expects 'colour', got '{clear_type}'")
+        self.emit("clear")
 
     def visit_write_node(self, node):
-        x_type = node.x_expr.accept(self)
-        y_type = node.y_expr.accept(self)
         val_type = node.val_expr.accept(self)
-
+        y_type = node.y_expr.accept(self)
+        x_type = node.x_expr.accept(self)
+        
         if x_type != "int":
             raise Exception(f"Type Error: __write expects int for x, got '{x_type}'")
         if y_type != "int":
@@ -297,12 +300,15 @@ class CodeGenerator:
         if val_type != "colour":
             raise Exception(f"Type Error: __write expects colour value, got '{val_type}'")
         
+        self.emit("write")
+        
     def visit_write_box_node(self, node):
-        x_type = node.x_expr.accept(self)
-        y_type = node.y_expr.accept(self)
-        w_type = node.w_expr.accept(self)
-        h_type = node.h_expr.accept(self)
+        
         val_type = node.val_expr.accept(self)
+        h_type = node.h_expr.accept(self)
+        w_type = node.w_expr.accept(self)
+        y_type = node.y_expr.accept(self)
+        x_type = node.x_expr.accept(self)
 
         for label, typ in zip(["x", "y", "width", "height"], [x_type, y_type, w_type, h_type]):
             if typ != "int":
@@ -310,6 +316,8 @@ class CodeGenerator:
 
         if val_type != "colour":
             raise Exception(f"Type Error: __write_box expects colour value, got '{val_type}'")
+        
+        self.emit("writebox")
 
     def visit_rtrn_node(self, node):
         if self.current_return_type is None:
