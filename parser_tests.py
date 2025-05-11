@@ -50,6 +50,10 @@ test_inputs = [
             __print y;
         }
     }
+    """,
+
+    """
+    __clear 5;
     """
 ]
 

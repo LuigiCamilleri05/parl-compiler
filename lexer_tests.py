@@ -22,7 +22,8 @@ if __name__ == "__main__":
     "#1234",
     "let fun if else for while return as not and or float int bool colour __print __delay __write __write_box __random_int __read __width __height",
     "_let a d",
-    "int"
+    "int",
+    "__clear"
 ]
 
     lexer = Lexer()

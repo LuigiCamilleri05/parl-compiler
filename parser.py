@@ -335,6 +335,14 @@ class Parser:
         expr = self.ParseExpression()
         return ast.ASTDelayNode(expr)
     
+    def ParseClearStatement(self):
+        if self.crtToken.type != lex.TokenType.kw__clear:
+            raise Exception("Syntax Error: Expected '__clear'")
+        self.NextToken()
+
+        expr = self.ParseExpression()
+        return ast.ASTClearNode(expr)
+    
     def ParseWriteStatement(self):
         if self.crtToken.type == lex.TokenType.kw__write:
             self.NextToken()
@@ -556,6 +564,10 @@ class Parser:
             return stmt
         elif self.crtToken.type == lex.TokenType.kw__delay:
             stmt = self.ParseDelayStatement()
+            self.ExpectSemicolon()
+            return stmt
+        elif self.crtToken.type == lex.TokenType.kw__clear:
+            stmt = self.ParseClearStatement()
             self.ExpectSemicolon()
             return stmt
         elif self.crtToken.type in [lex.TokenType.kw__write, lex.TokenType.kw__write_box]:

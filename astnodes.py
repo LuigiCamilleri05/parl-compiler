@@ -84,6 +84,14 @@ class ASTDelayNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_delay_node(self)
 
+class ASTClearNode(ASTStatementNode):
+    def __init__(self, expr):
+        self.name = "ASTClearNode"
+        self.expr = expr  
+
+    def accept(self, visitor):
+        visitor.visit_clear_node(self)
+
 class ASTWriteNode(ASTStatementNode):
     def __init__(self, x_expr, y_expr, val_expr):
         self.name = "ASTWriteNode"
@@ -300,6 +308,9 @@ class ASTVisitor:
     def visit_delay_node(self, node):
         raise NotImplementedError()
     
+    def visit_clear_node(self, node):
+        raise NotImplementedError()
+    
     def visit_write_node(self, node):
         raise NotImplementedError()
     
@@ -405,6 +416,12 @@ class PrintNodesVisitor(ASTVisitor):
 
     def visit_delay_node(self, node):
         print('\t' * self.tab_count, "Delay Statement =>")
+        self.inc_tab_count()
+        node.expr.accept(self)
+        self.dec_tab_count()
+
+    def visit_clear_node(self, node):
+        print('\t' * self.tab_count, "Clear Statement =>")
         self.inc_tab_count()
         node.expr.accept(self)
         self.dec_tab_count()

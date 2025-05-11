@@ -235,6 +235,11 @@ class SemanticAnalyzer:
         delay_type = node.expr.accept(self)
         if delay_type != "int":
             raise Exception(f"Type Error: __delay expects 'int', got '{delay_type}'")
+        
+    def visit_clear_node(self, node):
+        clear_type = node.expr.accept(self)
+        if clear_type != "colour":
+            raise Exception(f"Type Error: __clear expects 'colour', got '{clear_type}'")
 
     def visit_write_node(self, node):
         x_type = node.x_expr.accept(self)

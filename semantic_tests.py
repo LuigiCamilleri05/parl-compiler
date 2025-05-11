@@ -104,6 +104,17 @@ test_programs = [
     __delay delayMs;
     """,
 
+    # __clear with valid colour expression
+    """
+    let c : colour = #FF00FF;
+    __clear c;
+    """,
+    # __clear with invalid type (e.g., int) 
+    """
+    let x : int = 5;
+    __clear x;
+    """,
+
     # __write with correct argument types (int, int, colour)
     """
     let x : int = 10;

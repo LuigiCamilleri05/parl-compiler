@@ -64,6 +64,7 @@ class TokenType(Enum):
     linecomment = 57
     blockcomment = 58
     newline = 59
+    kw__clear = 60
 
 
 # Token class represents a token with its type and lexeme
@@ -456,4 +457,5 @@ class Lexer:
         "__read": TokenType.kw__read,
         "__width": TokenType.kw__width,
         "__height": TokenType.kw__height,
+        "__clear": TokenType.kw__clear,
     }
