@@ -43,13 +43,14 @@ class CodeGenerator:
 
     def visit_pad_read_node(self, node):
         # Both x and y coordinates must be int
-        x_type = node.expr1.accept(self)
         y_type = node.expr2.accept(self)
-
+        x_type = node.expr1.accept(self)
+    
         if x_type != "int":
             raise Exception(f"Type Error: __read expects int for x, got {x_type}")
         if y_type != "int":
             raise Exception(f"Type Error: __read expects int for y, got {y_type}")
+        self.emit("read")
 
         return "colour"  # __read returns a colour value
 
