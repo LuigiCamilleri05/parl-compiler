@@ -24,6 +24,7 @@ class CodeGenerator:
         self.emit(f"push {index}")
         self.emit(f"push {level}")
         self.emit("st")
+
     def visit_variable_node(self, node):
         var_type, index, level = self.symbol_table.lookup(node.lexeme)
         if not getattr(self, "suppress_emit", False):
@@ -32,10 +33,12 @@ class CodeGenerator:
     
     def visit_pad_width_node(self, node):
         # PAD width is always an integer
+        self.emit("width")
         return "int"
 
     def visit_pad_height_node(self, node):
         # PAD height is always an integer
+        self.emit("height")
         return "int"
 
     def visit_pad_read_node(self, node):
@@ -54,6 +57,7 @@ class CodeGenerator:
         bound_type = node.expr.accept(self)
         if bound_type != "int":
             raise Exception(f"Type Error: __random_int expects an int, got {bound_type}")
+        self.emit("irnd")
         return "int"
 
 
@@ -292,7 +296,7 @@ class CodeGenerator:
         val_type = node.val_expr.accept(self)
         y_type = node.y_expr.accept(self)
         x_type = node.x_expr.accept(self)
-        
+
         if x_type != "int":
             raise Exception(f"Type Error: __write expects int for x, got '{x_type}'")
         if y_type != "int":

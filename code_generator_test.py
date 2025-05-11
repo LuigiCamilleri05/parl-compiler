@@ -53,6 +53,16 @@ test_inputs = [
         let x : int = 42;
         __print x;
     """,
+    """
+        // Test __width and __height
+        let w : int = __width;
+        let h : int = __height;
+        __print w;
+        __print h;
+    """,
+    """
+    let c : int = __random_int 10;
+    """,
 
 
 ]
