@@ -110,6 +110,21 @@ test_inputs = [
         }
     }
     """,
+    # Basic cast checks
+    """
+    // Cast int to float
+    let x : float = 5 as float;
+
+    // Cast float to int
+    let y : int = 3.14 as int;
+
+    // Cast int to colour
+    let c : colour = 255 as colour;
+    """,
+    """
+    let f : float = 3.9;
+    let x : int = f as int;
+    """,
 
 
 ]
