@@ -153,11 +153,18 @@ class CodeGenerator:
         if node.op == "not":
             if operand_type != "bool":
                 raise Exception("Type Error: 'not' operator requires a boolean operand")
+            self.emit("not")
             return "bool"
 
         elif node.op == "-":
             if operand_type not in {"int", "float"}:
                 raise Exception("Type Error: Unary '-' operator requires int or float operand")
+            # Simulate 0 - operand by:
+            # 1. Evaluating operand (already done above)
+            # 2. Pushing 0 after operand is on stack
+            # 3. Calling `sub`, which pops b then a → computes a - b
+            self.emit("push -1")
+            self.emit("mul")
             return operand_type
 
         else:
@@ -335,7 +342,7 @@ class CodeGenerator:
             )
         
     def visit_program_node(self, node):
-        self.symbol_table.enter_scope()
+        
 
         func_decls = []
         main_stmts = []
@@ -352,6 +359,8 @@ class CodeGenerator:
         self.emit("jmp")
         self.emit("halt")
 
+        # Emit code for .main logic
+        self.symbol_table.enter_scope()
         # Emit stack frame setup for main block
         num_main_vars = sum(isinstance(s, ASTVariableDeclNode) for s in main_stmts)
         self.emit(f"push {num_main_vars}")

@@ -75,6 +75,15 @@ test_inputs = [
 
     # Full assignment
     "let c : colour = __read 4, 5;"
+    "__print not true;",         # Should print 0
+    "__print not false;",        # Should print 1
+    "let a: bool = true; __print not a;"
+    "__print -42;",              # Should print -42
+    "let x: int = 5; __print -x;"  # Should print -5
+
+    # Negate floats
+    "__print -3.14;",
+    "let y: float = 2.5; __print -y;"
 
 
 ]
