@@ -25,7 +25,10 @@ class CodeGenerator:
         self.emit(f"push {level}")
         self.emit("st")
     def visit_variable_node(self, node):
-        return self.symbol_table.lookup(node.lexeme)
+        var_type, index, level = self.symbol_table.lookup(node.lexeme)
+        if not getattr(self, "suppress_emit", False):
+            self.emit(f"push [{index}:{level}]")
+        return var_type
     
     def visit_pad_width_node(self, node):
         # PAD width is always an integer
@@ -76,29 +79,64 @@ class CodeGenerator:
         return "colour"
 
     def visit_assignment_node(self, node):
+        self.suppress_emit = True # Used to not emit the variable's value when assigning
         var_type = node.id.accept(self)
+        self.suppress_emit = False
+
         expr_type = node.expr.accept(self)
         if var_type != expr_type:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
+        
+            # Get index and level manually for the store
+        _, index, level = self.symbol_table.lookup(node.id.lexeme)
+        self.emit(f"push {index}")
+        self.emit(f"push {level}")
+        self.emit("st")
 
     def visit_binary_op_node(self, node):
-        left_type = node.left.accept(self)
         right_type = node.right.accept(self)
-
+        left_type = node.left.accept(self)
+        
         if left_type != right_type:
             raise Exception(f"Type Error: Mismatched operands: {left_type} and {right_type}")
 
         if node.op in ["+", "-", "*", "/"]:
             if left_type not in ["int", "float"]:
                 raise Exception(f"Type Error: Arithmetic operator '{node.op}' requires int or float operands")
+            if node.op == "+":
+                self.emit("add")
+            elif node.op == "-":
+                self.emit("sub")
+            elif node.op == "*":
+                self.emit("mul")
+            elif node.op == "/":
+                self.emit("div")
+            
             return left_type
 
         elif node.op in ["<", ">", "<=", ">=", "==", "!="]:
-            return "bool"  # Comparison always returns bool
+            if node.op == "<":
+                self.emit("lt")
+            elif node.op == "<=":
+                self.emit("le")
+            elif node.op == "==":
+                self.emit("eq")
+            elif node.op == "!=":
+                self.emit("eq")
+                self.emit("not")
+            elif node.op == ">":
+                self.emit("gt")
+            elif node.op == ">=":
+                self.emit("ge")
+            return "bool"
 
         elif node.op in ["and", "or"]:
             if left_type != "bool":
                 raise Exception(f"Type Error: Logical operator '{node.op}' requires bool operands")
+            if node.op == "and":
+                self.emit("and")
+            elif node.op == "or":
+                self.emit("or")
             return "bool"
 
         else:
