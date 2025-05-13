@@ -28,14 +28,17 @@ class CodeGenerator:
         if expr_type != var_type:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
         _, index, level = self.symbol_table.lookup(node.identifier)
+        access_level = self.symbol_table.scope_levels[-1] - level
         self.emit(f"push {index}")
-        self.emit(f"push {level}")
+        self.emit(f"push {access_level}")
         self.emit("st")
 
     def visit_variable_node(self, node):
-        var_type, index, level = self.symbol_table.lookup(node.lexeme)
+        var_type, index, declevel = self.symbol_table.lookup(node.lexeme)
+
+        access_level = self.symbol_table.scope_levels[-1] - declevel
         if not getattr(self, "suppress_emit", False):
-            self.emit(f"push [{index}:{level}]")
+            self.emit(f"push [{index}:{access_level}]")
         return var_type
     
     def visit_pad_width_node(self, node):
@@ -101,8 +104,9 @@ class CodeGenerator:
         
             # Get index and level manually for the store
         _, index, level = self.symbol_table.lookup(node.id.lexeme)
+        access_level = self.symbol_table.scope_levels[-1] - level
         self.emit(f"push {index}")
-        self.emit(f"push {level}")
+        self.emit(f"push {access_level}")
         self.emit("st")
 
     def visit_binary_op_node(self, node):
@@ -199,10 +203,45 @@ class CodeGenerator:
     def visit_if_node(self, node):
         cond_type = node.condition_expr.accept(self)
         if cond_type != "bool":
-            raise Exception("Type Error: Condition of 'if' must be boolean")
-        node.then_block.accept(self)
+            raise Exception("Type Error: Condition in 'if' must be boolean")
+
+        
+
+        
         if node.else_block:
+
+            self.emit("push #PC+1")  # Placeholder for jump target
+            self.emit("cjmp")
+            cjmp_index = len(self.instructions) - 1
+
             node.else_block.accept(self)
+
+            # Jump over else block
+            self.emit("push #PC+1")  # Placeholder
+            self.emit("jmp")
+            jmp_index = len(self.instructions) - 1
+
+            # Patch cjmp
+            self.instructions[cjmp_index - 1] = f"push #PC+{len(self.instructions) - cjmp_index + 1}"
+            
+            node.then_block.accept(self)
+
+            # Patch jump over else
+            self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
+        else:
+            self.emit("push #PC+4")  # Always +4
+            self.emit("cjmp")
+
+            cjmp_index = len(self.instructions) - 1
+
+            self.emit("push #PC+1")  # Placeholder for jump target
+            self.emit("jmp")
+
+            jmp_index = len(self.instructions) - 1
+            node.then_block.accept(self)
+            self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
+
+
 
     def visit_function_decl_node(self, node):
         # Ensure function is declared at top level (global scope)

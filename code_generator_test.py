@@ -125,7 +125,56 @@ test_inputs = [
     let f : float = 3.9;
     let x : int = f as int;
     """,
+    # Basic if-else checks
+    """ 
+    let x:int = 5;
+    let y:int = 10;
 
+    if (x < y) {
+        __print x;
+    } else {
+        __print y;
+    }
+    """,
+    """
+    let x:int = -5;
+
+    if (x < 0) {   
+       __print x;
+    }
+    """,
+    # Nested if-else checks
+    """
+    let a:int = 1;
+    let b:int = 2;
+
+    if (a < b) {
+        if (b < 10) {
+            __print b;
+        } else {
+            __print a;
+        }
+    }
+    """,
+    """
+    let a:int = 4;
+    {
+    let b:int = 2;
+    a = a + 1;
+    }
+    """,
+    """
+    {
+        let x : int = 3;
+        {
+            let y : float = 2.5;
+            {
+                let z : bool = true;
+                x = x + 1;
+            }
+        }
+    }
+    """,
 
 ]
 
