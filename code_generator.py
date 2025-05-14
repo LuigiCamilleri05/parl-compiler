@@ -297,15 +297,30 @@ class CodeGenerator:
         return func_entry['return_type']
     
     def visit_while_node(self, node):
-        # Check condition expression type
-        condition_type = node.condition.accept(self)
-        if condition_type != "bool":
-            self.error(f"Type Error: While loop condition must be 'bool', got '{condition_type}'")
+        loop_start_index = len(self.instructions)  # mark the start of the condition check
 
-        # Enter loop body scope and analyze contents
-        self.symbol_table.enter_scope()
+        # 1. Evaluate the condition
+        cond_type = node.condition.accept(self)
+        if cond_type != "bool":
+            raise Exception("Type Error: Condition in 'while' must be boolean")
+
+        # 2. Emit placeholder for conditional jump if false (exit loop)
+        self.emit("push #PC+4") 
+        self.emit("cjmp")
+        cjmp_index = len(self.instructions) - 1
+        self.emit("push #PC+1")  # Placeholder for jump target
+        self.emit("jmp")
+        jmp_index = len(self.instructions) - 1
+
+        # 3. Emit loop body
         node.body.accept(self)
-        self.symbol_table.exit_scope()
+
+        # 4. Jump back to start of condition
+        self.emit(f"push #PC-{len(self.instructions) - loop_start_index + 1}")
+        self.emit("jmp")
+        self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
+
+
 
     def visit_for_node(self, node):
         self.symbol_table.enter_scope()

@@ -175,6 +175,50 @@ test_inputs = [
         }
     }
     """,
+    # Normal while loop
+    """
+    let i:int = 0;
+    while (i < 3) {
+        i = i + 1;
+    }
+    """,
+    # Loop with nested block
+    """
+    let i:int = 0;
+
+    while (i < 2) {
+        {
+            __print i;
+        }
+        i = i + 1;
+    }
+    """,
+    """
+    let i:int = 0;
+    let limit:int = 5;
+
+    while (i < limit) {
+        __print i;
+        i = i + 1;
+    }
+    """,
+    # Infinite loop
+    """ 
+    let flag:bool = true;
+
+    while (flag) {
+        __print 1;
+        flag = false;
+    }
+    """,
+    # Empty Block
+    """
+    let x:int = 2;
+
+    while (x < 1) {
+    }
+    """,
+
 
 ]
 
