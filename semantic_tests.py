@@ -371,7 +371,12 @@ test_programs = [
     let m: int = __height;    // the height (y-values) of the pad
     let w: int = Race(c1, c2, m); // call function Race
     __print w; // prints value of expression to VM logs
-"""
+""",
+    """
+    fun sum(arr:int[8]) -> int {
+    return arr[0] + arr[1];
+    }
+    """,
 
 
 

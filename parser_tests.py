@@ -54,6 +54,11 @@ test_inputs = [
 
     """
     __clear 5;
+    """,
+    """
+    fun sum(arr:int[8]) -> int {
+    return arr[0] + arr[1];
+    }
     """
 ]
 

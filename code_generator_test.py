@@ -453,7 +453,12 @@ test_inputs = [
     let m:int = __height;
     let w:int = Race(c1, c2, m);
     __print w;
+    """,
     """
+    fun sum(arr:int[8]) -> int {
+    return arr[0] + arr[1];
+    }
+    """,
 
 
 ]

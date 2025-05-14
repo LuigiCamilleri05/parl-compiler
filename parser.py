@@ -121,11 +121,18 @@ class Parser:
         elif tok.type == lex.TokenType.identifier:
             # Could be a variable or function call
             id_name = tok.lexeme
+            index_expr = None
             self.NextToken()
+            if self.crtToken.type == lex.TokenType.lbracket:
+                self.NextToken()
+                index_expr = self.ParseExpression()
+                if self.crtToken.type != lex.TokenType.rbracket:
+                    raise Exception("Syntax Error: Expected ']' after array index")
+                self.NextToken()
             if self.crtToken.type == lex.TokenType.lparen:
                 return self.ParseFunctionCall(id_name)
             else:
-                return ast.ASTVariableNode(id_name)
+                return ast.ASTVariableNode(id_name, index_expr)
 
         elif tok.type == lex.TokenType.lparen:
             self.NextToken()
@@ -484,12 +491,11 @@ class Parser:
             self.NextToken()
             if self.crtToken.type != lex.TokenType.integer:
                 raise Exception("Expected integer size for array parameter")
-            size = self.crtToken.lexeme
+            size = ast.ASTIntegerNode(self.crtToken.lexeme)
             self.NextToken()
             if self.crtToken.type != lex.TokenType.rbracket:
                 raise Exception("Expected ']' after array size")
             self.NextToken()
-
         return (name, param_type, size)
     
     def ParseFormalParams(self):

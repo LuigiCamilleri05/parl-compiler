@@ -198,6 +198,28 @@ class CodeGenerator:
             raise Exception(f"Type Error: Cannot cast from {expr_type} to {target_type}")
 
         return target_type
+    
+    def visit_array_decl_node(self, node):
+        # Must end in []
+        if not node.vartype.endswith("[]"):
+            raise Exception(f"Type Error: Array declaration must use an array type, got '{node.vartype}'")
+
+        base_type = node.vartype[:-2]  # e.g., "int" from "int[]"
+
+        # Declare the variable in the symbol table
+        self.symbol_table.declare(node.identifier, node.vartype)
+
+        # Check the type of the size expression
+        if node.size_expr:
+            size_type = node.size_expr.accept(self)
+            if size_type != "int":
+                raise Exception("Type Error: Array size must be of type 'int'")
+
+        # Check each value's type
+        for val in node.values:
+            val_type = val.accept(self)
+            if val_type != base_type:
+                raise Exception(f"Type Error: Array '{node.identifier}' expects elements of type '{base_type}', got '{val_type}'")
 
 
     def visit_if_node(self, node):
