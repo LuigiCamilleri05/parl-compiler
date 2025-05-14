@@ -324,25 +324,60 @@ class CodeGenerator:
 
     def visit_for_node(self, node):
         self.symbol_table.enter_scope()
-
-        # Check optional initializer (must be a variable declaration)
+        
+        
+       # Handle init (could be one or more variable declarations)
         if node.init:
+            if isinstance(node.init, list):
+                count = sum(isinstance(decl, ASTVariableDeclNode) for decl in node.init)
+            else:
+                count = 1  # assume one declaration
+            self.emit(f"push {count}")
+            self.emit("oframe")
             node.init.accept(self)
+        else:
+            self.emit("push 0")
+            self.emit("oframe")
+        
 
-        # Check condition (must return bool)
+            
+
+        # 2. Remember start of condition
+        cond_index = len(self.instructions)
+
+        # 3. Emit condition (e.g., i < 64)
         if node.condition:
             cond_type = node.condition.accept(self)
             if cond_type != "bool":
                 raise Exception(f"Type Error: for-loop condition must be 'bool', got '{cond_type}'")
+        else:
+            raise Exception("Syntax Error: for-loop requires a condition")
 
-        # Check optional update (e.g., assignment)
+        # 4. Emit conditional jump to stay in loop if true
+        self.emit("push #PC+4")  # jump forward to stay in loop
+        self.emit("cjmp")
+
+        # 5. Emit unconditional jump to exit loop if condition is false
+        self.emit("push #PC+1")  # placeholder to jump after body
+        self.emit("jmp")
+        jmp_to_end_index = len(self.instructions) - 1
+
+        # 6. Emit body (open block scope)
+        node.body.accept(self)
+
+        # 7. Emit update (e.g., i = i + 1)
         if node.update:
             node.update.accept(self)
 
-        # Visit loop body
-        node.body.accept(self)
+        # 8. Jump back to condition
+        self.emit(f"push #PC-{len(self.instructions) - cond_index}")
+        self.emit("jmp")
 
+        # 9. Patch jump that exits the loop
+        self.instructions[jmp_to_end_index - 1] = f"push #PC+{len(self.instructions) - jmp_to_end_index + 1}"
+        self.emit("cframe")
         self.symbol_table.exit_scope()
+
 
     def visit_print_node(self, node):
         # No specific type requirement for print

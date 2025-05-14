@@ -218,6 +218,95 @@ test_inputs = [
     while (x < 1) {
     }
     """,
+    # Basic for loop
+    """
+    for (let i:int = 0; i < 3; i = i + 1) {
+        __print i;
+    }
+    """,
+    # Empty for loop
+    """ 
+    for (let i:int = 0; i < 2; i = i + 1) {
+    }
+    """,
+    # For loop with nested block
+    """
+    for (let i:int = 0; i < 2; i = i + 1) {
+        {
+        __print i;
+        }
+    }
+    """,
+    # For loop decrementing
+    """
+    for (let i:int = 5; i > 0; i = i - 1) {
+        {
+        __print i;
+        }
+    }
+    """,
+    # Example in the assignment
+    """
+    let c:colour = 0 as colour;
+
+    for (let i:int = 0; i < 64; i = i + 1) {
+    c = (__random_int 1677216) as colour;
+    __clear c;
+
+    __delay 16;
+    }
+    """,
+    # For loop with nested for loop
+    """
+    for (let i:int = 0; i < 2; i = i + 1) {
+        for (let j:int = 0; j < 3; j = j + 1) {
+            __print i;
+            __print j;
+        }
+    }
+    """,
+    # For loop in while loop
+    """
+    let i:int = 0;
+        while (i < 2) {
+            for (let j:int = 0; j < 2; j = j + 1) {
+                __print i;
+                __print j;
+            }
+            i = i + 1;
+        }
+    """,
+    # For loop with nested while loop
+    """
+    for (let i:int = 0; i < 2; i = i + 1) {
+        let j:int = 0;
+        while (j < 2) {
+            __print i;
+            __print j;
+            j = j + 1;
+        }
+    }
+    """,
+    # For loop in if statement
+    """
+    let x:int = 1;
+    if (x < 2) {
+        for (let i:int = 0; i < 2; i = i + 1) {
+            __print i;
+        }
+    }
+    """,
+    # While loop in if statement    
+    """
+    let x:int = 0;
+    if (x == 0) {
+        let i:int = 0;
+        while (i < 2) {
+            __print i;
+            i = i + 1;
+        }
+    }
+    """,
 
 
 ]
