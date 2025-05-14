@@ -244,34 +244,36 @@ class CodeGenerator:
 
 
     def visit_function_decl_node(self, node):
-        # Ensure function is declared at top level (global scope)
-        if len(self.symbol_table.scopes) != 2: # 2 scopes: global and function
+        if len(self.symbol_table.scopes) != 3:
             raise Exception("Semantic Error: Functions must be declared in the global scope.")
 
-        # Store function signature in the global scope
-        self.symbol_table.declare(node.name, {
-            'type': node.return_type,
-            'kind': 'function',
-            'params': node.params,  # list of (name, type, size)
-            'return_type': node.return_type
-        })
-        self.emit("push #PC+1")  # Placeholder for function entry
+        self.emit("push #PC+1")
         self.emit("jmp")
         jmp_index = len(self.instructions) - 1
         self.emit(f".{node.name}")
-        
 
-        # Declare each parameter in the function's scope
+        self.symbol_table.enter_scope()
+
         for name, typ, _ in node.params:
             self.symbol_table.declare(name, typ)
 
         self.current_return_type = node.return_type
-        node.body.accept(self)
+
+        num_locals = sum(isinstance(stmt, ASTVariableDeclNode) for stmt in node.body.stmts)
+        self.emit(f"push {num_locals}")
+        self.emit("alloc")
+
+        # ✅ Avoid visit_block_node here to skip oframe/cframe
+        for stmt in node.body.stmts:
+            stmt.accept(self)
+
+        self.symbol_table.exit_scope()
+
         self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
-        
 
         if not self.does_block_always_return(node.body):
             raise Exception(f"Semantic Error: Function '{node.name}' may not return a value on all paths.")
+
 
     def visit_function_call_node(self, node):
         # Check if function is declared
@@ -457,6 +459,24 @@ class CodeGenerator:
         self.emit("jmp")
         self.emit("halt")
 
+        func_decls = []
+        main_stmts = []
+
+        for stmt in node.stmts:
+            if isinstance(stmt, ASTFunctionDeclNode):
+                func_decls.append(stmt)
+            else:
+                main_stmts.append(stmt)
+            
+        # Declare all functions in global scope
+        for func in func_decls:
+            self.symbol_table.declare(func.name, {
+                'type': func.return_type,
+                'kind': 'function',
+                'params': func.params,
+                'return_type': func.return_type
+            })
+
         # Emit code for .main logic
         self.symbol_table.enter_scope()
         # Emit stack frame setup for main block
@@ -464,7 +484,12 @@ class CodeGenerator:
         self.emit(f"push {num_main_vars}")
         self.emit("oframe")
 
-        for stmt in node.stmts:
+        for func in func_decls:
+            self.symbol_table.enter_scope()
+            func.accept(self)
+            self.symbol_table.exit_scope()
+
+        for stmt in main_stmts:
             stmt.accept(self)
 
         self.emit("cframe")

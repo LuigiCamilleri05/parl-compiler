@@ -316,6 +316,144 @@ test_inputs = [
     let x:int = say_hello();
     __print x;
     """,
+     # Simple function test
+    """
+    fun say_hello() -> int {
+        return 10;
+    }
+
+    let x:int = say_hello();
+    __print x;
+    """,
+    # Function with one parameter
+    """
+    fun square(n:int) -> int {
+        return n * n;
+    }
+
+    let val:int = square(4);
+    __print val;
+    """,
+    # Function with if statement
+    """
+    fun max(a:int, b:int) -> int {
+        if (a > b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+
+    let biggest:int = max(10, 20);
+    __print biggest;
+    """,
+    # Nested functions
+    """
+    fun add(a:int, b:int) -> int {
+        return a + b;
+    }
+
+    fun mul(x:int, y:int) -> int {
+        return x * y;
+    }
+
+    let result:int = mul(add(2, 3), 4);  // (2+3)*4 = 20
+    __print result;
+    """,
+    # Function called in while loop
+    """
+    fun IsEven(n:int) -> bool {
+        return n/2 == 1;
+    }
+
+    let x:int = 2;
+
+    while (IsEven(x)) {
+    __print x;
+    x = x + 1;
+    }
+    """,
+    # Function call in for loop
+    """
+    fun IsEven(n:int) -> bool {
+        return (n /2) == 1;
+    }
+
+    // Loop while x is even, using a function as the condition
+    for (let x:int = 2; IsEven(x); x = x +1) {
+        __print x;
+        x = x + 1;
+    }
+    """,
+    # Last test not array
+    """
+    fun XGreaterY(x:int, y:int) -> bool {
+    let ans:bool = true;
+    if (y > x) { ans = false; }
+    return ans;
+    }
+
+    fun XGreaterY_2(x:int, y:int) -> bool {
+    return x > y;
+    }
+
+    fun AverageOfTwo(x:int, y:int) -> float {
+    let t0:int = x + y;
+    let t1:float = t0 / 2 as float;
+    return t1;
+    }
+
+    fun AverageOfTwo_2(x:int, y:int) -> float {
+    return (x + y) / 2 as float;
+    }
+
+    fun Max(x:int, y:int) -> int {
+    let m:int = x;
+    if (y > m) { m = y; }
+    return m;
+    }
+
+    __write 10, 14, #00ff00;
+    __delay 100;
+    __write_box 10, 14, 2, 2, #0000ff;
+
+    for (let i:int = 0; i < 10; i = i + 1) {
+    __print i;
+    __delay 1000;
+    }
+
+    fun Race(p1_c:colour, p2_c:colour, score_max:int) -> int {
+        let p1_score:int = 0;
+        let p2_score:int = 0;
+
+    while ((p1_score < score_max) and (p2_score < score_max)) {
+        let p1_toss:int = __random_int 1000;
+        let p2_toss:int = __random_int 1000;
+
+    if (p1_toss > p2_toss) {
+        p1_score = p1_score + 1;
+    __write 1, p1_score, p1_c;
+    } else {
+        p2_score = p2_score + 1;
+        __write 2, p2_score, p2_c;
+    }
+
+    __delay 100;
+    }
+
+    if (p2_score > p1_score) {
+        return 2;
+    }
+
+        return 1;
+    }
+
+    let c1:colour = #00ff00;
+    let c2:colour = #0000ff;
+    let m:int = __height;
+    let w:int = Race(c1, c2, m);
+    __print w;
+    """
 
 
 ]
