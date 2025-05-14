@@ -307,6 +307,15 @@ test_inputs = [
         }
     }
     """,
+    """
+    fun say_hello() -> int {
+        let x:int = 5;
+        return x - 42;
+    }
+
+    let x:int = say_hello();
+    __print x;
+    """,
 
 
 ]

@@ -255,8 +255,11 @@ class CodeGenerator:
             'params': node.params,  # list of (name, type, size)
             'return_type': node.return_type
         })
-
-        self.symbol_table.enter_scope()
+        self.emit("push #PC+1")  # Placeholder for function entry
+        self.emit("jmp")
+        jmp_index = len(self.instructions) - 1
+        self.emit(f".{node.name}")
+        
 
         # Declare each parameter in the function's scope
         for name, typ, _ in node.params:
@@ -264,15 +267,15 @@ class CodeGenerator:
 
         self.current_return_type = node.return_type
         node.body.accept(self)
+        self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
+        
 
         if not self.does_block_always_return(node.body):
             raise Exception(f"Semantic Error: Function '{node.name}' may not return a value on all paths.")
 
-        self.symbol_table.exit_scope()
-
     def visit_function_call_node(self, node):
         # Check if function is declared
-        func_entry = self.symbol_table.lookup(node.func_name)
+        func_entry,_,_ = self.symbol_table.lookup(node.func_name)
         if func_entry is None:
             self.error(f"Function '{node.func_name}' not declared before use.")
             return None
@@ -293,6 +296,15 @@ class CodeGenerator:
             arg_type = arg_node.accept(self)
             if arg_type != param_type:
                 self.error(f"In call to '{node.func_name}', expected type '{param_type}' for argument '{param_name}', got '{arg_type}'.")
+
+         # 2. Push number of arguments
+        self.emit(f"push {len(node.args)}")
+
+        # 3. Push function label
+        self.emit(f"push .{node.func_name}")
+
+        # 4. Emit call
+        self.emit("call")
 
         return func_entry['return_type']
     
@@ -436,19 +448,9 @@ class CodeGenerator:
             raise Exception(
                 f"Type Error: Return type '{expr_type}' does not match expected function return type '{self.current_return_type}'"
             )
+        self.emit("ret")
         
     def visit_program_node(self, node):
-        
-
-        func_decls = []
-        main_stmts = []
-
-        for stmt in node.stmts:
-            if isinstance(stmt, ASTFunctionDeclNode):
-                func_decls.append(stmt)
-            else:
-                main_stmts.append(stmt) 
-
         # Emit PArIR .main entry
         self.emit(".main")
         self.emit("push 4")
@@ -458,21 +460,16 @@ class CodeGenerator:
         # Emit code for .main logic
         self.symbol_table.enter_scope()
         # Emit stack frame setup for main block
-        num_main_vars = sum(isinstance(s, ASTVariableDeclNode) for s in main_stmts)
+        num_main_vars = sum(isinstance(s, ASTVariableDeclNode) for s in node.stmts)
         self.emit(f"push {num_main_vars}")
         self.emit("oframe")
 
-        for stmt in main_stmts:
+        for stmt in node.stmts:
             stmt.accept(self)
 
         self.emit("cframe")
         self.symbol_table.exit_scope()
         self.emit("halt")
-
-        # Emit code for function declarations
-        for func in func_decls:
-            self.emit(f".{func.name}")
-            func.accept(self)
 
     def does_block_always_return(self, block_node):
         """
