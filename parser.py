@@ -274,7 +274,7 @@ class Parser:
                 raise Exception("Expected ']' after single array literal")
             self.NextToken()
 
-            return ast.ASTArrayDeclNode(identifier, vartype, size, [value])
+            return ast.ASTArrayDeclNode(identifier, vartype + "[]", size, [value])
 
         # Case 2: inferred size [] = [val, val, ...]
         elif self.crtToken.type == lex.TokenType.rbracket:
@@ -299,7 +299,7 @@ class Parser:
                 raise Exception("Expected ']' to close array literal")
             self.NextToken()
 
-            return ast.ASTArrayDeclNode(identifier, vartype, size, values)
+            return ast.ASTArrayDeclNode(identifier, vartype + "[]", size, values)
 
         else:
             raise Exception("Syntax Error: Invalid array declaration format")
@@ -496,6 +496,9 @@ class Parser:
             if self.crtToken.type != lex.TokenType.rbracket:
                 raise Exception("Expected ']' after array size")
             self.NextToken()
+            param_type += "[]"
+
+        
         return (name, param_type, size)
     
     def ParseFormalParams(self):

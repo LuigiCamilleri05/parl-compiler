@@ -27,8 +27,21 @@ class SemanticAnalyzer:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
 
     def visit_variable_node(self, node):
-        var_type, _, _, = self.symbol_table.lookup(node.lexeme)
+        var_type, _, _ = self.symbol_table.lookup(node.lexeme)
+
+        # If accessing an element of an array
+        if node.index_expr is not None:
+            idx_type = node.index_expr.accept(self)
+            if idx_type != "int":
+                raise Exception("Type Error: Array index must be an integer")
+
+            if not var_type.endswith("[]"):
+                raise Exception(f"Type Error: Cannot index non-array variable '{node.lexeme}' of type '{var_type}'")
+
+            return var_type[:-2]  # e.g., "int[]" → "int"
+
         return var_type
+
     
     def visit_pad_width_node(self, node):
         # PAD width is always an integer
