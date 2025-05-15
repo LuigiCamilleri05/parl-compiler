@@ -1,4 +1,4 @@
-from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode, ASTVariableDeclNode, ASTFunctionDeclNode
+from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode, ASTVariableDeclNode, ASTFunctionDeclNode, ASTArrayDeclNode, ASTVariableNode, ASTBinaryOpNode, ASTUnaryOpNode, ASTIntegerNode, ASTForNode
 from symbol_table import SymbolTable
 
 class CodeGenerator:
@@ -35,12 +35,21 @@ class CodeGenerator:
 
     def visit_variable_node(self, node):
         var_type, index, declevel = self.symbol_table.lookup(node.lexeme)
-
         access_level = self.symbol_table.scope_levels[-1] - declevel
+        if node.index_expr is not None:
+            idx_type = node.index_expr.accept(self)
+            if idx_type != "int":
+                raise Exception("Type Error: Array index must be an integer")
+            if not getattr(self, "suppress_emit", False): 
+                self.emit(f"push +[{index}:{access_level}]")           
+            return var_type[:-2]          
+
         if not getattr(self, "suppress_emit", False):
             self.emit(f"push [{index}:{access_level}]")
+
         return var_type
-    
+
+
     def visit_pad_width_node(self, node):
         # PAD width is always an integer
         self.emit("width")
@@ -81,10 +90,12 @@ class CodeGenerator:
         return "float"
 
     def visit_boolean_node(self, node):
-        if node.value:
+        if node.value == "true":
             self.emit("push 1")
-        else:
+        elif node.value == "false":
             self.emit("push 0")
+        else:
+            raise Exception(f"Type Error: Unknown boolean value '{node.value}'")
         return "bool"
 
     def visit_colour_node(self, node):
@@ -216,10 +227,21 @@ class CodeGenerator:
                 raise Exception("Type Error: Array size must be of type 'int'")
 
         # Check each value's type
-        for val in node.values:
+        for val in reversed(node.values):
             val_type = val.accept(self)
             if val_type != base_type:
-                raise Exception(f"Type Error: Array '{node.identifier}' expects elements of type '{base_type}', got '{val_type}'")
+                raise Exception(
+                    f"Type Error: Array '{node.identifier}' expects elements of type '{base_type}', got '{val_type}'"
+                )
+
+        self.emit(f"push {len(node.values)}")  # number of values
+
+        _, index, level = self.symbol_table.lookup(node.identifier)
+        access_level = self.symbol_table.scope_levels[-1] - level
+        self.emit(f"push {index}")
+        self.emit(f"push {access_level}")
+
+        self.emit("sta")  # store array to stack
 
 
     def visit_if_node(self, node):
@@ -281,7 +303,7 @@ class CodeGenerator:
 
         self.current_return_type = node.return_type
 
-        num_locals = sum(isinstance(stmt, ASTVariableDeclNode) for stmt in node.body.stmts)
+        num_locals = self.count_local_vars(node.body)
         self.emit(f"push {num_locals}")
         self.emit("alloc")
 
@@ -352,7 +374,7 @@ class CodeGenerator:
         node.body.accept(self)
 
         # 4. Jump back to start of condition
-        self.emit(f"push #PC-{len(self.instructions) - loop_start_index + 1}")
+        self.emit(f"push #PC-{len(self.instructions) - loop_start_index}")
         self.emit("jmp")
         self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
 
@@ -502,7 +524,19 @@ class CodeGenerator:
         # Emit code for .main logic
         self.symbol_table.enter_scope()
         # Emit stack frame setup for main block
-        num_main_vars = sum(isinstance(s, ASTVariableDeclNode) for s in node.stmts)
+        num_main_vars = 0
+        for stmt in node.stmts:
+            if isinstance(stmt, ASTVariableDeclNode) or isinstance(stmt, ASTFunctionDeclNode):
+                num_main_vars += 1
+            elif isinstance(stmt, ASTArrayDeclNode):
+                # account for array reference slot
+                if stmt.size_expr:
+                    if isinstance(stmt.size_expr, ASTIntegerNode):
+                        num_main_vars += int(stmt.size_expr.value)
+                    else:
+                        raise Exception("Semantic Error: Array size must be a constant integer in global scope.")
+                else:
+                    num_main_vars += len(stmt.values)
         self.emit(f"push {num_main_vars}")
         self.emit("oframe")
 
@@ -537,6 +571,26 @@ class CodeGenerator:
                 if self.does_block_always_return(stmt):
                     return True
         return False
+    
+    def count_local_vars(self, block):
+        count = 0
+        for stmt in block.stmts:
+            if isinstance(stmt, ASTVariableDeclNode):
+                count += 1
+            elif isinstance(stmt, ASTArrayDeclNode):
+                if stmt.size_expr and isinstance(stmt.size_expr, ASTIntegerNode):
+                    count += int(stmt.size_expr.value)
+                else:
+                    count += len(stmt.values)
+            elif isinstance(stmt, ASTBlockNode):
+                count += self.count_local_vars(stmt)
+            elif isinstance(stmt, ASTIfNode):
+                count += self.count_local_vars(stmt.then_block)
+                if stmt.else_block:
+                    count += self.count_local_vars(stmt.else_block)
+            elif isinstance(stmt, ASTWhileNode) or isinstance(stmt, ASTForNode):
+                count += self.count_local_vars(stmt.body)
+        return count
     
     def emit(self, instr):
         self.instructions.append(instr)
