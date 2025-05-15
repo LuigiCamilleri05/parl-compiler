@@ -135,9 +135,6 @@ test_inputs = [
     } else {
         __print y;
     }
-    """,
-    """
-    let x:int = -5;
 
     if (x < 0) {   
        __print x;
@@ -455,10 +452,31 @@ test_inputs = [
     __print w;
     """,
     """
-    fun sum(arr:int[8]) -> int {
-    return arr[0] + arr[1];
+    let c:colour = 0 as colour;
+
+     for (let i:int = 0; i < 64; i = i + 1) {
+    c = (__random_int 1677216) as colour;
+    __clear c;
+
+    __delay 16;
     }
     """,
+    """
+    fun MaxInArray(x:int[8]) -> int {
+        let m:int = 0;
+        for (let i:int = 0; i < 8; i = i + 1) {
+            if (x[i] > m) {
+                m = x[i];
+            }
+        }
+        return m;
+    }
+
+    let list_of_integers:int[] = [23, 54, 3, 65, 99, 120, 34, 21];
+    let max:int = MaxInArray(list_of_integers);
+    __print max;
+    """,
+  
 
 
 ]

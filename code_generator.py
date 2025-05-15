@@ -288,8 +288,15 @@ class CodeGenerator:
 
 
     def visit_function_decl_node(self, node):
-        if len(self.symbol_table.scopes) != 3:
+        if len(self.symbol_table.scopes) != 2:
             raise Exception("Semantic Error: Functions must be declared in the global scope.")
+        
+        self.symbol_table.declare(node.name, {
+                'type': node.return_type,
+                'kind': 'function',
+                'params': node.params,
+                'return_type': node.return_type
+            })
 
         self.emit("push #PC+1")
         self.emit("jmp")
@@ -503,23 +510,6 @@ class CodeGenerator:
         self.emit("jmp")
         self.emit("halt")
 
-        func_decls = []
-        main_stmts = []
-
-        for stmt in node.stmts:
-            if isinstance(stmt, ASTFunctionDeclNode):
-                func_decls.append(stmt)
-            else:
-                main_stmts.append(stmt)
-            
-        # Declare all functions in global scope
-        for func in func_decls:
-            self.symbol_table.declare(func.name, {
-                'type': func.return_type,
-                'kind': 'function',
-                'params': func.params,
-                'return_type': func.return_type
-            })
 
         # Emit code for .main logic
         self.symbol_table.enter_scope()
@@ -540,12 +530,7 @@ class CodeGenerator:
         self.emit(f"push {num_main_vars}")
         self.emit("oframe")
 
-        for func in func_decls:
-            self.symbol_table.enter_scope()
-            func.accept(self)
-            self.symbol_table.exit_scope()
-
-        for stmt in main_stmts:
+        for stmt in node.stmts:
             stmt.accept(self)
 
         self.emit("cframe")
