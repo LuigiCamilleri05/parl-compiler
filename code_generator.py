@@ -27,14 +27,19 @@ class CodeGenerator:
         expr_type = node.expr.accept(self)
         if expr_type != var_type:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
-        _, index, level = self.symbol_table.lookup(node.identifier)
+        entry  = self.symbol_table.lookup_full(node.identifier)
+        index = entry["index"]
+        level = entry["level"]
         access_level = self.symbol_table.scope_levels[-1] - level
         self.emit(f"push {index}")
         self.emit(f"push {access_level}")
         self.emit("st")
 
     def visit_variable_node(self, node):
-        var_type, index, declevel = self.symbol_table.lookup(node.lexeme)
+        entry = self.symbol_table.lookup_full(node.lexeme)
+        var_type = entry["type"]
+        index = entry["index"]
+        declevel = entry["level"]
         access_level = self.symbol_table.scope_levels[-1] - declevel
         if node.index_expr is not None:
             idx_type = node.index_expr.accept(self)
@@ -114,7 +119,9 @@ class CodeGenerator:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
         
             # Get index and level manually for the store
-        _, index, level = self.symbol_table.lookup(node.id.lexeme)
+        entry = self.symbol_table.lookup_full(node.id.lexeme)
+        index = entry["index"]
+        level = entry["level"]
         access_level = self.symbol_table.scope_levels[-1] - level
         self.emit(f"push {index}")
         self.emit(f"push {access_level}")
@@ -218,7 +225,12 @@ class CodeGenerator:
         base_type = node.vartype[:-2]  # e.g., "int" from "int[]"
 
         # Declare the variable in the symbol table
-        self.symbol_table.declare(node.identifier, node.vartype)
+        self.symbol_table.declare(
+                node.identifier,
+                node.vartype,
+                size=len(node.values),
+                values=node.values
+            )
 
         # Check the type of the size expression
         if node.size_expr:
@@ -236,7 +248,9 @@ class CodeGenerator:
 
         self.emit(f"push {len(node.values)}")  # number of values
 
-        _, index, level = self.symbol_table.lookup(node.identifier)
+        entry = self.symbol_table.lookup_full(node.identifier)
+        index = entry["index"]
+        level = entry["level"]
         access_level = self.symbol_table.scope_levels[-1] - level
         self.emit(f"push {index}")
         self.emit(f"push {access_level}")
@@ -305,12 +319,26 @@ class CodeGenerator:
 
         self.symbol_table.enter_scope()
 
-        for name, typ, _ in node.params:
-            self.symbol_table.declare(name, typ)
+        for name, typ, size_expr in node.params:
+            if isinstance(typ, str) and typ.endswith("[]"):
+                # Determine size from literal size expression (assumes ASTIntegerNode)
+                if isinstance(size_expr, ASTIntegerNode):
+                    size = int(size_expr.value)
+                else:
+                    raise Exception(f"Semantic Error: Array parameter '{name}' must have a constant size.")
+                self.symbol_table.declare(name, typ, size=size)
+            else:
+                self.symbol_table.declare(name, typ)
 
         self.current_return_type = node.return_type
 
         num_locals = self.count_local_vars(node.body)
+        for name, typ, size_expr in node.params:
+            if isinstance(typ, str) and typ.endswith("[]"):
+                if isinstance(size_expr, ASTIntegerNode):
+                    num_locals += int(size_expr.value)
+            else:
+                num_locals += 1
         self.emit(f"push {num_locals}")
         self.emit("alloc")
 
@@ -328,7 +356,8 @@ class CodeGenerator:
 
     def visit_function_call_node(self, node):
         # Check if function is declared
-        func_entry,_,_ = self.symbol_table.lookup(node.func_name)
+        entry = self.symbol_table.lookup_full(node.func_name)
+        func_entry = entry["type"]
         if func_entry is None:
             self.error(f"Function '{node.func_name}' not declared before use.")
             return None
@@ -344,14 +373,31 @@ class CodeGenerator:
             self.error(f"Function '{node.func_name}' expects {len(expected_params)} argument(s), got {len(node.args)}.")
             return func_entry['return_type']
 
-        # Check each argument's type
         for (arg_node, (param_name, param_type, _)) in zip(node.args, expected_params):
-            arg_type = arg_node.accept(self)
-            if arg_type != param_type:
-                self.error(f"In call to '{node.func_name}', expected type '{param_type}' for argument '{param_name}', got '{arg_type}'.")
+            if param_type.endswith("[]"):
+                # This is an array parameter
+                entry = self.symbol_table.lookup_full(arg_node.lexeme)
+                index = entry["index"]
+                level = entry["level"]
+                size = entry["size"]
+                access_level = self.symbol_table.scope_levels[-1] - level
 
-         # 2. Push number of arguments
-        self.emit(f"push {len(node.args)}")
+                # Push size of array
+                self.emit(f"push {size}")
+                # Push offset and frame level of array
+                self.emit(f"pusha [{index}:{access_level}]")
+                self.emit(f"push {size}")
+                is_array = True
+            else:
+                is_array = False
+                arg_type = arg_node.accept(self)
+                if arg_type != param_type:
+                    self.error(f"In call to '{node.func_name}', expected type '{param_type}' for argument '{param_name}', got '{arg_type}'.")
+                    # 2. Push number of arguments
+
+        if not is_array:
+            self.emit(f"push {len(node.args)}")            
+        
 
         # 3. Push function label
         self.emit(f"push .{node.func_name}")

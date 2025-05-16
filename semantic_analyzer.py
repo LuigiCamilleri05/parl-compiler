@@ -1,4 +1,4 @@
-from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode
+from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode, ASTVariableDeclNode, ASTFunctionDeclNode, ASTArrayDeclNode, ASTVariableNode, ASTBinaryOpNode, ASTUnaryOpNode, ASTIntegerNode, ASTForNode
 from symbol_table import SymbolTable
 
 class SemanticAnalyzer:
@@ -6,11 +6,6 @@ class SemanticAnalyzer:
         self.symbol_table = SymbolTable()
         self.current_return_type = None
 
-    def visit_program_node(self, node):
-        self.symbol_table.enter_scope()
-        for stmt in node.stmts:
-            stmt.accept(self)
-        self.symbol_table.exit_scope()
 
     def visit_block_node(self, node):
         self.symbol_table.enter_scope()
@@ -27,22 +22,20 @@ class SemanticAnalyzer:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
 
     def visit_variable_node(self, node):
-        var_type, _, _ = self.symbol_table.lookup(node.lexeme)
+        entry = self.symbol_table.lookup_full(node.lexeme)
+        var_type = entry["type"]
 
-        # If accessing an element of an array
         if node.index_expr is not None:
+            if not var_type.endswith("[]"):
+                raise Exception(f"Type Error: Variable '{node.lexeme}' is not an array")
             idx_type = node.index_expr.accept(self)
             if idx_type != "int":
                 raise Exception("Type Error: Array index must be an integer")
+            return var_type[:-2]
 
-            if not var_type.endswith("[]"):
-                raise Exception(f"Type Error: Cannot index non-array variable '{node.lexeme}' of type '{var_type}'")
 
-            return var_type[:-2]  # e.g., "int[]" → "int"
 
         return var_type
-
-    
     def visit_pad_width_node(self, node):
         # PAD width is always an integer
         return "int"
@@ -53,8 +46,8 @@ class SemanticAnalyzer:
 
     def visit_pad_read_node(self, node):
         # Both x and y coordinates must be int
-        x_type = node.expr1.accept(self)
         y_type = node.expr2.accept(self)
+        x_type = node.expr1.accept(self)
 
         if x_type != "int":
             raise Exception(f"Type Error: __read expects int for x, got {x_type}")
@@ -89,9 +82,9 @@ class SemanticAnalyzer:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
 
     def visit_binary_op_node(self, node):
-        left_type = node.left.accept(self)
         right_type = node.right.accept(self)
-
+        left_type = node.left.accept(self)
+        
         if left_type != right_type:
             raise Exception(f"Type Error: Mismatched operands: {left_type} and {right_type}")
 
@@ -101,7 +94,7 @@ class SemanticAnalyzer:
             return left_type
 
         elif node.op in ["<", ">", "<=", ">=", "==", "!="]:
-            return "bool"  # Comparison always returns bool
+            return "bool"
 
         elif node.op in ["and", "or"]:
             if left_type != "bool":
@@ -153,7 +146,12 @@ class SemanticAnalyzer:
         base_type = node.vartype[:-2]  # e.g., "int" from "int[]"
 
         # Declare the variable in the symbol table
-        self.symbol_table.declare(node.identifier, node.vartype)
+        self.symbol_table.declare(
+                node.identifier,
+                node.vartype,
+                size=len(node.values),
+                values=node.values
+            )
 
         # Check the type of the size expression
         if node.size_expr:
@@ -162,50 +160,68 @@ class SemanticAnalyzer:
                 raise Exception("Type Error: Array size must be of type 'int'")
 
         # Check each value's type
-        for val in node.values:
+        for val in reversed(node.values):
             val_type = val.accept(self)
             if val_type != base_type:
-                raise Exception(f"Type Error: Array '{node.identifier}' expects elements of type '{base_type}', got '{val_type}'")
+                raise Exception(
+                    f"Type Error: Array '{node.identifier}' expects elements of type '{base_type}', got '{val_type}'"
+                )
 
 
     def visit_if_node(self, node):
         cond_type = node.condition_expr.accept(self)
         if cond_type != "bool":
-            raise Exception("Type Error: Condition of 'if' must be boolean")
-        node.then_block.accept(self)
+            raise Exception("Type Error: Condition in 'if' must be boolean")
         if node.else_block:
             node.else_block.accept(self)
 
+            node.then_block.accept(self)
+        else:
+            node.then_block.accept(self)
     def visit_function_decl_node(self, node):
-        # Ensure function is declared at top level (global scope)
-        if len(self.symbol_table.scopes) != 2: # 2 scopes: global and function
+        if len(self.symbol_table.scopes) != 2:
             raise Exception("Semantic Error: Functions must be declared in the global scope.")
-
-        # Store function signature in the global scope
         self.symbol_table.declare(node.name, {
-            'type': node.return_type,
-            'kind': 'function',
-            'params': node.params,  # list of (name, type, size)
-            'return_type': node.return_type
-        })
+                'type': node.return_type,
+                'kind': 'function',
+                'params': node.params,
+                'return_type': node.return_type
+            })
 
         self.symbol_table.enter_scope()
 
-        # Declare each parameter in the function's scope
-        for name, typ, _ in node.params:
-            self.symbol_table.declare(name, typ)
+        for name, typ, size_expr in node.params:
+            if isinstance(typ, str) and typ.endswith("[]"):
+                # Determine size from literal size expression (assumes ASTIntegerNode)
+                if isinstance(size_expr, ASTIntegerNode):
+                    size = int(size_expr.value)
+                else:
+                    raise Exception(f"Semantic Error: Array parameter '{name}' must have a constant size.")
+                self.symbol_table.declare(name, typ, size=size)
+            else:
+                self.symbol_table.declare(name, typ)
 
         self.current_return_type = node.return_type
-        node.body.accept(self)
+        num_locals = self.count_local_vars(node.body)
+        for name, typ, size_expr in node.params:
+            if isinstance(typ, str) and typ.endswith("[]"):
+                if isinstance(size_expr, ASTIntegerNode):
+                    num_locals += int(size_expr.value)
+            else:
+                num_locals += 1
+
+        for stmt in node.body.stmts:
+            stmt.accept(self)
+        self.symbol_table.exit_scope()
 
         if not self.does_block_always_return(node.body):
             raise Exception(f"Semantic Error: Function '{node.name}' may not return a value on all paths.")
 
-        self.symbol_table.exit_scope()
 
     def visit_function_call_node(self, node):
         # Check if function is declared
-        func_entry, _, _ = self.symbol_table.lookup(node.func_name)
+        entry = self.symbol_table.lookup_full(node.func_name)
+        func_entry = entry["type"]
         if func_entry is None:
             self.error(f"Function '{node.func_name}' not declared before use.")
             return None
@@ -221,49 +237,47 @@ class SemanticAnalyzer:
             self.error(f"Function '{node.func_name}' expects {len(expected_params)} argument(s), got {len(node.args)}.")
             return func_entry['return_type']
 
-        # Check each argument's type
         for (arg_node, (param_name, param_type, _)) in zip(node.args, expected_params):
-            arg_type = arg_node.accept(self)
-            if arg_type != param_type:
-                self.error(f"In call to '{node.func_name}', expected type '{param_type}' for argument '{param_name}', got '{arg_type}'.")
+            if param_type.endswith("[]"):
+                # This is an array parameter
+                entry = self.symbol_table.lookup_full(arg_node.lexeme)
+            else:
+                arg_type = arg_node.accept(self)
+                if arg_type != param_type:
+                    self.error(f"In call to '{node.func_name}', expected type '{param_type}' for argument '{param_name}', got '{arg_type}'.")
 
         return func_entry['return_type']
     
     def visit_while_node(self, node):
-        # Check condition expression type
-        condition_type = node.condition.accept(self)
-        if condition_type != "bool":
-            self.error(f"Type Error: While loop condition must be 'bool', got '{condition_type}'")
+        cond_type = node.condition.accept(self)
+        if cond_type != "bool":
+            raise Exception("Type Error: Condition in 'while' must be boolean")
 
-        # Enter loop body scope and analyze contents
-        self.symbol_table.enter_scope()
         node.body.accept(self)
-        self.symbol_table.exit_scope()
 
     def visit_for_node(self, node):
         self.symbol_table.enter_scope()
 
-        # Check optional initializer (must be a variable declaration)
         if node.init:
             node.init.accept(self)
 
-        # Check condition (must return bool)
         if node.condition:
             cond_type = node.condition.accept(self)
             if cond_type != "bool":
                 raise Exception(f"Type Error: for-loop condition must be 'bool', got '{cond_type}'")
+        else:
+            raise Exception("Syntax Error: for-loop requires a condition")
+        node.body.accept(self)
 
-        # Check optional update (e.g., assignment)
+        # 7. Emit update (e.g., i = i + 1)
         if node.update:
             node.update.accept(self)
 
-        # Visit loop body
-        node.body.accept(self)
+
 
         self.symbol_table.exit_scope()
 
     def visit_print_node(self, node):
-        # No specific type requirement for print — any type is fine
         node.expr.accept(self)
 
     def visit_delay_node(self, node):
@@ -277,9 +291,9 @@ class SemanticAnalyzer:
             raise Exception(f"Type Error: __clear expects 'colour', got '{clear_type}'")
 
     def visit_write_node(self, node):
-        x_type = node.x_expr.accept(self)
-        y_type = node.y_expr.accept(self)
         val_type = node.val_expr.accept(self)
+        y_type = node.y_expr.accept(self)
+        x_type = node.x_expr.accept(self)
 
         if x_type != "int":
             raise Exception(f"Type Error: __write expects int for x, got '{x_type}'")
@@ -289,11 +303,11 @@ class SemanticAnalyzer:
             raise Exception(f"Type Error: __write expects colour value, got '{val_type}'")
         
     def visit_write_box_node(self, node):
-        x_type = node.x_expr.accept(self)
-        y_type = node.y_expr.accept(self)
-        w_type = node.w_expr.accept(self)
-        h_type = node.h_expr.accept(self)
         val_type = node.val_expr.accept(self)
+        h_type = node.h_expr.accept(self)
+        w_type = node.w_expr.accept(self)
+        y_type = node.y_expr.accept(self)
+        x_type = node.x_expr.accept(self)
 
         for label, typ in zip(["x", "y", "width", "height"], [x_type, y_type, w_type, h_type]):
             if typ != "int":
@@ -312,6 +326,29 @@ class SemanticAnalyzer:
                 f"Type Error: Return type '{expr_type}' does not match expected function return type '{self.current_return_type}'"
             )
 
+    def visit_program_node(self, node):
+
+        # Emit code for .main logic
+        self.symbol_table.enter_scope()
+        # Emit stack frame setup for main block
+        num_main_vars = 0
+        for stmt in node.stmts:
+            if isinstance(stmt, ASTVariableDeclNode) or isinstance(stmt, ASTFunctionDeclNode):
+                num_main_vars += 1
+            elif isinstance(stmt, ASTArrayDeclNode):
+                # account for array reference slot
+                if stmt.size_expr:
+                    if isinstance(stmt.size_expr, ASTIntegerNode):
+                        num_main_vars += int(stmt.size_expr.value)
+                    else:
+                        raise Exception("Semantic Error: Array size must be a constant integer in global scope.")
+                else:
+                    num_main_vars += len(stmt.values)
+
+        for stmt in node.stmts:
+            stmt.accept(self)
+
+        self.symbol_table.exit_scope()
     def does_block_always_return(self, block_node):
         """
         Determines whether all control paths in this block lead to a return.
@@ -331,7 +368,26 @@ class SemanticAnalyzer:
                 if self.does_block_always_return(stmt):
                     return True
         return False
-
+    
+    def count_local_vars(self, block):
+        count = 0
+        for stmt in block.stmts:
+            if isinstance(stmt, ASTVariableDeclNode):
+                count += 1
+            elif isinstance(stmt, ASTArrayDeclNode):
+                if stmt.size_expr and isinstance(stmt.size_expr, ASTIntegerNode):
+                    count += int(stmt.size_expr.value)
+                else:
+                    count += len(stmt.values)
+            elif isinstance(stmt, ASTBlockNode):
+                count += self.count_local_vars(stmt)
+            elif isinstance(stmt, ASTIfNode):
+                count += self.count_local_vars(stmt.then_block)
+                if stmt.else_block:
+                    count += self.count_local_vars(stmt.else_block)
+            elif isinstance(stmt, ASTWhileNode) or isinstance(stmt, ASTForNode):
+                count += self.count_local_vars(stmt.body)
+        return count
 
     def error(self, message):
         raise Exception(f"Semantic Error: {message}")

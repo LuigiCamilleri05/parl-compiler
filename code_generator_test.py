@@ -476,6 +476,29 @@ test_inputs = [
     let max:int = MaxInArray(list_of_integers);
     __print max;
     """,
+    """
+    fun draw_pattern(offset:int) -> bool {
+        let colors:colour[] = [#FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3]; // Rainbow colors
+
+        for (let x:int = 0; x < __width; x = x + 3) {
+            for (let y:int = 0; y < __height; y = y + 3) {                        
+                let colorIndex:int = (x + y + offset) / 7;
+                __write_box x, y, 2, 2, colors[colorIndex];
+            }
+        }
+
+        return true;
+    }
+
+    let offset:int = 0;
+    let r:bool = false;
+
+    while (true) {
+        r = draw_pattern(offset);
+        offset = offset + 1;
+        __delay 10; // Delay to make the movement visible
+    }
+    """
   
 
 
