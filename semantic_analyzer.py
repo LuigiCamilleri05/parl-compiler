@@ -1,4 +1,4 @@
-from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode, ASTVariableDeclNode, ASTFunctionDeclNode, ASTArrayDeclNode, ASTVariableNode, ASTBinaryOpNode, ASTUnaryOpNode, ASTIntegerNode, ASTForNode
+from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode, ASTVariableDeclNode, ASTFunctionDeclNode, ASTArrayDeclNode, ASTIntegerNode, ASTForNode
 from symbol_table import SymbolTable
 
 class SemanticAnalyzer:

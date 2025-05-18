@@ -6,14 +6,14 @@
 # This enables flexibility allowing different visitor classes in separate files
 # Each node's constructor (__init__) may store relevant information specific to that node's role in the AST.
 
-class ASTVariableNode():
-    def __init__(self, lexeme, index_expr=None):
-        self.name = "ASTVariableNode"
-        self.lexeme = lexeme
-        self.index_expr = index_expr
+class ASTBooleanNode():
+    def __init__(self, v):
+        self.name = "ASTBooleanNode"
+        self.value = v
 
     def accept(self, visitor):
-        return visitor.visit_variable_node(self)
+        return visitor.visit_boolean_node(self)
+
 
 class ASTIntegerNode():
     def __init__(self, v):
@@ -31,14 +31,6 @@ class ASTFloatNode():
     def accept(self, visitor):
         return visitor.visit_float_node(self)
 
-class ASTBooleanNode():
-    def __init__(self, v):
-        self.name = "ASTBooleanNode"
-        self.value = v
-
-    def accept(self, visitor):
-        return visitor.visit_boolean_node(self)
-
 class ASTColourNode():
     def __init__(self, v):
         self.name = "ASTColourNode"
@@ -46,6 +38,115 @@ class ASTColourNode():
 
     def accept(self, visitor):
         return visitor.visit_colour_node(self)
+
+class ASTPadWidthNode():
+    def __init__(self):
+        self.name = "ASTPadWidthNode"
+
+    def accept(self, visitor):
+        return visitor.visit_pad_width_node(self)
+
+class ASTPadHeightNode():
+    def __init__(self):
+        self.name = "ASTPadHeightNode"
+
+    def accept(self, visitor):
+        return visitor.visit_pad_height_node(self)
+
+class ASTPadReadNode():
+    def __init__(self, expr1, expr2):
+        self.name = "ASTPadReadNode"
+        self.expr1 = expr1
+        self.expr2 = expr2
+
+    def accept(self, visitor):
+        return visitor.visit_pad_read_node(self)
+
+class ASTPadRandINode():
+    def __init__(self, expr):
+        self.name = "ASTPadRandINode"
+        self.expr = expr
+
+    def accept(self, visitor):
+        return visitor.visit_pad_rand_int_node(self)
+
+class ASTBinaryOpNode():
+    def __init__(self, op, left, right):
+        self.name = "ASTBinaryOpNode"
+        self.op = op              
+        self.left = left          
+        self.right = right        
+
+    def accept(self, visitor):
+        return visitor.visit_binary_op_node(self)
+    
+
+class ASTFunctionCallNode():
+    def __init__(self, func_name, args):
+        self.name = "ASTFunctionCallNode"
+        self.func_name = func_name
+        self.args = args  
+
+    def accept(self, visitor):
+        return visitor.visit_function_call_node(self)
+
+
+class ASTUnaryOpNode():
+    def __init__(self, op, operand):
+        self.name = "ASTUnaryOpNode"
+        self.op = op              
+        self.operand = operand    
+
+    def accept(self, visitor):
+        return visitor.visit_unary_op_node(self)
+    
+class ASTAssignmentNode():
+    def __init__(self, ast_var_node, ast_expression_node):
+        self.name = "ASTAssignmentNode"        
+        self.id   = ast_var_node
+        self.expr = ast_expression_node
+
+    def accept(self, visitor):
+        visitor.visit_assignment_node(self)
+
+class ASTCastNode():
+    def __init__(self, expr, target_type):
+        self.name = "ASTCastNode"
+        self.expr = expr             
+        self.target_type = target_type  
+
+    def accept(self, visitor):
+        return visitor.visit_cast_node(self)
+
+class ASTVariableDeclNode():
+    def __init__(self, identifier, vartype, expr):
+        self.name = "ASTVariableDeclNode"
+        self.identifier = identifier  
+        self.vartype = vartype        
+        self.expr = expr              
+
+    def accept(self, visitor):
+        visitor.visit_variable_decl_node(self)
+
+class ASTVariableNode():
+    def __init__(self, lexeme, index_expr=None):
+        self.name = "ASTVariableNode"
+        self.lexeme = lexeme
+        self.index_expr = index_expr
+
+    def accept(self, visitor):
+        return visitor.visit_variable_node(self)
+
+class ASTArrayDeclNode():
+    def __init__(self, identifier, vartype, size_expr, values):
+        self.name = "ASTArrayDeclNode"
+        self.identifier = identifier      
+        self.vartype = vartype            
+        self.size_expr = size_expr       
+        self.values = values              
+
+    def accept(self, visitor):
+        visitor.visit_array_decl_node(self)
 
 class ASTPrintNode():
     def __init__(self, expr):
@@ -81,7 +182,6 @@ class ASTWriteNode():
     def accept(self, visitor):
         visitor.visit_write_node(self)
 
-
 class ASTWriteBoxNode():
     def __init__(self, x_expr, y_expr, w_expr, h_expr, val_expr):
         self.name = "ASTWriteBoxNode"
@@ -93,6 +193,14 @@ class ASTWriteBoxNode():
 
     def accept(self, visitor):
         visitor.visit_write_box_node(self)
+
+class ASTRtrnNode():
+    def __init__(self, expr):
+        self.name = "ASTRtrnNode"
+        self.expr = expr  
+
+    def accept(self, visitor):
+        visitor.visit_rtrn_node(self)
 
 class ASTIfNode():
     def __init__(self, condition_expr, then_block, else_block=None):
@@ -123,14 +231,6 @@ class ASTWhileNode():
 
     def accept(self, visitor):
         return visitor.visit_while_node(self)
-    
-class ASTRtrnNode():
-    def __init__(self, expr):
-        self.name = "ASTRtrnNode"
-        self.expr = expr  
-
-    def accept(self, visitor):
-        visitor.visit_rtrn_node(self)
 
 class ASTFunctionDeclNode():
     def __init__(self, name, params, return_type, return_size, body):
@@ -142,105 +242,6 @@ class ASTFunctionDeclNode():
 
     def accept(self, visitor):
         return visitor.visit_function_decl_node(self)
-
-class ASTFunctionCallNode():
-    def __init__(self, func_name, args):
-        self.name = "ASTFunctionCallNode"
-        self.func_name = func_name
-        self.args = args  
-
-    def accept(self, visitor):
-        return visitor.visit_function_call_node(self)
-
-
-class ASTBinaryOpNode():
-    def __init__(self, op, left, right):
-        self.name = "ASTBinaryOpNode"
-        self.op = op              
-        self.left = left          
-        self.right = right        
-
-    def accept(self, visitor):
-        return visitor.visit_binary_op_node(self)
-
-class ASTUnaryOpNode():
-    def __init__(self, op, operand):
-        self.name = "ASTUnaryOpNode"
-        self.op = op              
-        self.operand = operand    
-
-    def accept(self, visitor):
-        return visitor.visit_unary_op_node(self)
-
-class ASTCastNode():
-    def __init__(self, expr, target_type):
-        self.name = "ASTCastNode"
-        self.expr = expr             
-        self.target_type = target_type  
-
-    def accept(self, visitor):
-        return visitor.visit_cast_node(self)
-
-class ASTArrayDeclNode():
-    def __init__(self, identifier, vartype, size_expr, values):
-        self.name = "ASTArrayDeclNode"
-        self.identifier = identifier      
-        self.vartype = vartype            
-        self.size_expr = size_expr       
-        self.values = values              
-
-    def accept(self, visitor):
-        visitor.visit_array_decl_node(self)
-
-class ASTPadWidthNode():
-    def __init__(self):
-        self.name = "ASTPadWidthNode"
-
-    def accept(self, visitor):
-        return visitor.visit_pad_width_node(self)
-
-class ASTPadHeightNode():
-    def __init__(self):
-        self.name = "ASTPadHeightNode"
-
-    def accept(self, visitor):
-        return visitor.visit_pad_height_node(self)
-
-class ASTPadReadNode():
-    def __init__(self, expr1, expr2):
-        self.name = "ASTPadReadNode"
-        self.expr1 = expr1
-        self.expr2 = expr2
-
-    def accept(self, visitor):
-        return visitor.visit_pad_read_node(self)
-
-class ASTPadRandINode():
-    def __init__(self, expr):
-        self.name = "ASTPadRandINode"
-        self.expr = expr
-
-    def accept(self, visitor):
-        return visitor.visit_pad_rand_int_node(self)
-
-class ASTVariableDeclNode():
-    def __init__(self, identifier, vartype, expr):
-        self.name = "ASTVariableDeclNode"
-        self.identifier = identifier  
-        self.vartype = vartype        
-        self.expr = expr              
-
-    def accept(self, visitor):
-        visitor.visit_variable_decl_node(self)
-
-class ASTAssignmentNode():
-    def __init__(self, ast_var_node, ast_expression_node):
-        self.name = "ASTAssignmentNode"        
-        self.id   = ast_var_node
-        self.expr = ast_expression_node
-
-    def accept(self, visitor):
-        visitor.visit_assignment_node(self)                
 
 class ASTBlockNode():
     def __init__(self):
@@ -277,10 +278,88 @@ class PrintNodesVisitor():
 
     def dec_tab_count(self):
         self.tab_count -= 1
+
+    def visit_boolean_node(self, bool_node):
+        self.node_count += 1
+        print('\t' * self.tab_count, "Boolean value::", bool_node.value)    
         
     def visit_integer_node(self, int_node):
         self.node_count += 1
         print('\t' * self.tab_count, "Integer value::", int_node.value)
+
+    def visit_float_node(self, float_node):
+        self.node_count += 1
+        print('\t' * self.tab_count, "Float value::", float_node.value)   
+
+    def visit_colour_node(self, colour_node):
+        self.node_count += 1
+        print('\t' * self.tab_count, "Colour value::", colour_node.value)
+
+    def visit_pad_width_node(self, pad_width_node):
+        self.node_count += 1
+        print('\t' * self.tab_count, "Pad Width value")
+
+    def visit_pad_height_node(self, pad_height_node):
+        self.node_count += 1
+        print('\t' * self.tab_count, "Pad Height")
+
+    def visit_pad_read_node(self, node):
+        self.node_count += 1
+        print('\t' * self.tab_count, "PadRead =>")
+        self.tab_count += 1
+        node.expr1.accept(self)
+        node.expr2.accept(self)
+        self.tab_count -= 1
+
+    def visit_pad_rand_int_node(self, node):
+        self.node_count += 1
+        print('\t' * self.tab_count, "PadRandInt =>")
+        self.tab_count += 1
+        node.expr.accept(self)
+        self.tab_count -= 1
+
+    def visit_binary_op_node(self, node):
+        print('\t' * self.tab_count, f"Binary Op: {node.op}")
+        self.tab_count += 1
+        node.left.accept(self)
+        node.right.accept(self)
+        self.tab_count -= 1
+
+    def visit_function_call_node(self, node):
+        print('\t' * self.tab_count, f"Function Call: {node.func_name}()")
+        self.tab_count += 1
+        for arg in node.args:
+            arg.accept(self)
+        self.tab_count -= 1
+
+    def visit_unary_op_node(self, node):
+        print('\t' * self.tab_count, f"Unary Op: {node.op}")
+        self.tab_count += 1
+        node.operand.accept(self)
+        self.tab_count -= 1
+
+    def visit_assignment_node(self, ass_node):
+        self.node_count += 1
+        print('\t' * self.tab_count, "Assignment node => ")
+        self.inc_tab_count()        
+        ass_node.id.accept(self)
+        ass_node.expr.accept(self)
+        self.dec_tab_count()
+
+    def visit_cast_node(self, node):
+            print('\t' * self.tab_count, f"Cast to: {node.target_type}")
+            self.tab_count += 1
+            node.expr.accept(self)
+    
+    def visit_variable_decl_node(self, var_decl_node):
+        self.node_count += 1
+        print('\t' * self.tab_count, f"Variable Declaration => {var_decl_node.identifier} : {var_decl_node.vartype}")
+        self.tab_count += 1
+        var_decl_node.expr.accept(self)
+        self.tab_count -= 1
+
+        self.tab_count -= 1
+    
 
     def visit_variable_node(self, var_node):
         self.node_count += 1
@@ -291,17 +370,23 @@ class PrintNodesVisitor():
             var_node.index_expr.accept(self)
             self.tab_count -= 1
 
-    def visit_float_node(self, float_node):
-        self.node_count += 1
-        print('\t' * self.tab_count, "Float value::", float_node.value)
+    def visit_array_decl_node(self, node):
+        print('\t' * self.tab_count, f"Array Declaration => {node.identifier} : {node.vartype}")
+        self.inc_tab_count()
 
-    def visit_boolean_node(self, bool_node):
-        self.node_count += 1
-        print('\t' * self.tab_count, "Boolean value::", bool_node.value)
+        if node.size_expr:
+            print('\t' * self.tab_count, "Declared Size:")
+            self.inc_tab_count()
+            node.size_expr.accept(self)
+            self.dec_tab_count()
 
-    def visit_colour_node(self, colour_node):
-        self.node_count += 1
-        print('\t' * self.tab_count, "Colour value::", colour_node.value)
+        print('\t' * self.tab_count, "Initial Values:")
+        self.inc_tab_count()
+        for val in node.values:
+            val.accept(self)
+        self.dec_tab_count()
+
+        self.dec_tab_count()
 
     def visit_print_node(self, node):
         print('\t' * self.tab_count, "Print Statement =>")
@@ -339,6 +424,12 @@ class PrintNodesVisitor():
         node.val_expr.accept(self)
         self.dec_tab_count()
 
+    def visit_rtrn_node(self, node):
+        print('\t' * self.tab_count, "Return Statement =>")
+        self.inc_tab_count()
+        node.expr.accept(self)
+        self.dec_tab_count()
+    
     def visit_if_node(self, node):
         print('\t' * self.tab_count, "If Statement =>")
         self.inc_tab_count()
@@ -401,12 +492,6 @@ class PrintNodesVisitor():
 
         self.dec_tab_count()
 
-    def visit_rtrn_node(self, node):
-        print('\t' * self.tab_count, "Return Statement =>")
-        self.inc_tab_count()
-        node.expr.accept(self)
-        self.dec_tab_count()
-
     def visit_function_decl_node(self, node):
         print('\t' * self.tab_count + "Function Declaration =>")
         self.inc_tab_count()
@@ -439,89 +524,6 @@ class PrintNodesVisitor():
         node.body.accept(self)
         self.dec_tab_count()
 
-        self.dec_tab_count()
-    
-
-    def visit_function_call_node(self, node):
-        print('\t' * self.tab_count, f"Function Call: {node.func_name}()")
-        self.tab_count += 1
-        for arg in node.args:
-            arg.accept(self)
-        self.tab_count -= 1
-
-    def visit_binary_op_node(self, node):
-        print('\t' * self.tab_count, f"Binary Op: {node.op}")
-        self.tab_count += 1
-        node.left.accept(self)
-        node.right.accept(self)
-        self.tab_count -= 1
-
-    def visit_unary_op_node(self, node):
-        print('\t' * self.tab_count, f"Unary Op: {node.op}")
-        self.tab_count += 1
-        node.operand.accept(self)
-        self.tab_count -= 1
-
-    def visit_cast_node(self, node):
-        print('\t' * self.tab_count, f"Cast to: {node.target_type}")
-        self.tab_count += 1
-        node.expr.accept(self)
-        self.tab_count -= 1
-
-    def visit_array_decl_node(self, node):
-        print('\t' * self.tab_count, f"Array Declaration => {node.identifier} : {node.vartype}")
-        self.inc_tab_count()
-
-        if node.size_expr:
-            print('\t' * self.tab_count, "Declared Size:")
-            self.inc_tab_count()
-            node.size_expr.accept(self)
-            self.dec_tab_count()
-
-        print('\t' * self.tab_count, "Initial Values:")
-        self.inc_tab_count()
-        for val in node.values:
-            val.accept(self)
-        self.dec_tab_count()
-
-        self.dec_tab_count()
-
-    def visit_pad_width_node(self, pad_width_node):
-        self.node_count += 1
-        print('\t' * self.tab_count, "Pad Width value")
-
-    def visit_pad_height_node(self, pad_height_node):
-        self.node_count += 1
-        print('\t' * self.tab_count, "Pad Height")
-
-    def visit_pad_read_node(self, node):
-        self.node_count += 1
-        print('\t' * self.tab_count, "PadRead =>")
-        self.tab_count += 1
-        node.expr1.accept(self)
-        node.expr2.accept(self)
-        self.tab_count -= 1
-
-    def visit_pad_rand_int_node(self, node):
-        self.node_count += 1
-        print('\t' * self.tab_count, "PadRandInt =>")
-        self.tab_count += 1
-        node.expr.accept(self)
-        self.tab_count -= 1
-
-    def visit_variable_decl_node(self, var_decl_node):
-        self.node_count += 1
-        print('\t' * self.tab_count, f"Variable Declaration => {var_decl_node.identifier} : {var_decl_node.vartype}")
-        self.tab_count += 1
-        var_decl_node.expr.accept(self)
-        self.tab_count -= 1
-
-    def visit_assignment_node(self, ass_node):
-        self.node_count += 1
-        print('\t' * self.tab_count, "Assignment node => ")
-        self.inc_tab_count()        
-        ass_node.id.accept(self)
-        ass_node.expr.accept(self)
         self.dec_tab_count()
 
     def visit_block_node(self, block_node):
