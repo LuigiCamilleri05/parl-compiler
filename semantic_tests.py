@@ -85,7 +85,7 @@ test_programs = [
     let z : bool = true;
     }
     """,
-    # Test emplty block
+    # Test empty block
     """
     {
     }
@@ -374,7 +374,7 @@ test_programs = [
         x = x + 1;
     }
     """,
-    # Last test not array
+    # Testing from assignment
     """
     fun XGreaterY(x:int, y:int) -> bool {
     let ans:bool = true;
@@ -453,6 +453,7 @@ test_programs = [
     __delay 16;
     }
     """,
+    # Testing array from assignment
     """
     fun MaxInArray(x:int[8]) -> int {
         let m:int = 0;
@@ -468,6 +469,7 @@ test_programs = [
     let max:int = MaxInArray(list_of_integers);
     __print max;
     """,
+    # Testing function with array from examples
     """
     fun draw_pattern(offset:int) -> bool {
         let colors:colour[] = [#FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3]; // Rainbow colors
@@ -491,12 +493,10 @@ test_programs = [
         __delay 10; // Delay to make the movement visible
     }
     """
-    "let c : colour = __read 4, 5;"
-
-
 
 ]
 
+# Loop through each test case using the Parser and SemanticAnalyzer and get error for exceptions
 for i, code in enumerate(test_programs):
     print(f"\n--- Test Case {i + 1} ---")
     try:
