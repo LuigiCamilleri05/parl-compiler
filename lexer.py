@@ -450,9 +450,10 @@ class Lexer:
             
         return tokens_list;
 
-    # Generates tokens without printing
+    # Generates tokens without printing next token
     def GenerateTokensNoPrinting(Lexer, src_program_str):
 
+        print("INPUT:: " + src_program_str)
         tokens_list = []
         src_program_idx = 0;
 

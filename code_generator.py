@@ -27,7 +27,7 @@ class CodeGenerator:
         expr_type = node.expr.accept(self)
         if expr_type != var_type:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
-        entry  = self.symbol_table.lookup_full(node.identifier)
+        entry  = self.symbol_table.lookup(node.identifier)
         index = entry["index"]
         level = entry["level"]
         access_level = self.symbol_table.scope_levels[-1] - level
@@ -36,7 +36,7 @@ class CodeGenerator:
         self.emit("st")
 
     def visit_variable_node(self, node):
-        entry = self.symbol_table.lookup_full(node.lexeme)
+        entry = self.symbol_table.lookup(node.lexeme)
         var_type = entry["type"]
         index = entry["index"]
         declevel = entry["level"]
@@ -119,7 +119,7 @@ class CodeGenerator:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
         
             # Get index and level manually for the store
-        entry = self.symbol_table.lookup_full(node.id.lexeme)
+        entry = self.symbol_table.lookup(node.id.lexeme)
         index = entry["index"]
         level = entry["level"]
         access_level = self.symbol_table.scope_levels[-1] - level
@@ -248,7 +248,7 @@ class CodeGenerator:
 
         self.emit(f"push {len(node.values)}")  # number of values
 
-        entry = self.symbol_table.lookup_full(node.identifier)
+        entry = self.symbol_table.lookup(node.identifier)
         index = entry["index"]
         level = entry["level"]
         access_level = self.symbol_table.scope_levels[-1] - level
@@ -356,7 +356,7 @@ class CodeGenerator:
 
     def visit_function_call_node(self, node):
         # Check if function is declared
-        entry = self.symbol_table.lookup_full(node.func_name)
+        entry = self.symbol_table.lookup(node.func_name)
         func_entry = entry["type"]
         if func_entry is None:
             self.error(f"Function '{node.func_name}' not declared before use.")
@@ -376,7 +376,7 @@ class CodeGenerator:
         for (arg_node, (param_name, param_type, _)) in zip(node.args, expected_params):
             if param_type.endswith("[]"):
                 # This is an array parameter
-                entry = self.symbol_table.lookup_full(arg_node.lexeme)
+                entry = self.symbol_table.lookup(arg_node.lexeme)
                 index = entry["index"]
                 level = entry["level"]
                 size = entry["size"]
