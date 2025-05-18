@@ -1,23 +1,31 @@
-import astnodes as ast
-import lexer as lex
+# Importing modules from the same directory
+import astnodes as ast # Gets the AST nodes
+import lexer as lex # Performs lexical analysis
 
+# Parser class parsing the source program and generate ASTs
 class Parser:
+    
+    # Constructor initializing the parser
     def __init__(self, src_program_str):
         self.lexer = lex.Lexer()
-        self.index = -1  #start at -1 so that the first token is at index 0
+        self.index = -1  # Starts at -1 so that the first token is at index 0
         self.src_program = src_program_str
-        self.tokens = self.lexer.GenerateTokens(self.src_program)
+        self.tokens = self.lexer.GenerateTokensNoPrinting(self.src_program)
         self.crtToken = lex.Token("", lex.TokenType.error)
         self.nextToken = lex.Token("", lex.TokenType.error)
-        self.ASTroot = ast.ASTProgramNode()
+        
 
+    # Function to skip whitespace and comments
     def NextTokenSkipWS_Comments(self):
-        self.index += 1   #Gets next token 
+        self.index += 1   # Gets next token 
         if (self.index < len(self.tokens)):
+            # Assigns the next token to the current token
             self.crtToken = self.tokens[self.index]
         else:
             self.crtToken = lex.Token(lex.TokenType.end, "END")
 
+    # Function which skips whitespace and comments by calling the NextTokenSkipWS_Comments function
+    # once when it is not a whitespace or comment and keeps calling the NextTokenSkipWS_Comments if it is a whitespace or comment
     def NextToken(self):
         self.NextTokenSkipWS_Comments()
         while (self.crtToken.type == lex.TokenType.whitespace 
@@ -26,6 +34,67 @@ class Parser:
             or self.crtToken.type == lex.TokenType.newline):
             self.NextTokenSkipWS_Comments()
 
+        # Helper functions to check for specific tokens instead of repeating code
+    def ExpectSemicolon(self):
+        if self.crtToken.type != lex.TokenType.semicolon:
+            raise Exception("Syntax Error: Expected ';' after statement")
+        self.NextToken()
+
+    def ExpectComma(self):
+        if self.crtToken.type != lex.TokenType.comma:
+            raise Exception("Syntax Error: Expected ','")
+        self.NextToken()
+
+    # The rest of the code are the parsing functions
+    # The parsing functions are organized by the PARl EBNF grammar
+    # The parsing functions check token by token using self.NextToken() to move to the next token
+    # Every time a token is checked to see if it is the expected token in the grammar by checking its type
+    # The functions call each other recursively and use each other as arguments to parse the entire program
+
+    # ⟨Type⟩
+    def ParseType(self):
+        if self.crtToken.type in [
+            lex.TokenType.kw_int,
+            lex.TokenType.kw_float,
+            lex.TokenType.kw_bool,
+            lex.TokenType.kw_colour
+        ]:
+            type_name = self.crtToken.lexeme
+            self.NextToken()
+            return type_name
+        else:
+            raise Exception("Syntax Error: Expected a type.")
+
+    # ⟨Literal⟩
+    def ParseLiteral(self):
+        # ⟨IntegerLiteral⟩
+        if self.crtToken.type == lex.TokenType.integer:
+            val = self.crtToken.lexeme
+            self.NextToken()
+            return ast.ASTIntegerNode(val)
+        
+        # ⟨FloatLiteral⟩
+        elif self.crtToken.type == lex.TokenType.floatliteral:
+            val = self.crtToken.lexeme
+            self.NextToken()
+            return ast.ASTFloatNode(val)
+
+        # ⟨BooleanLiteral⟩
+        elif self.crtToken.type == lex.TokenType.booleanliteral:
+            val = self.crtToken.lexeme
+            self.NextToken()
+            return ast.ASTBooleanNode(val)
+
+        # ⟨ColourLiteral⟩
+        elif self.crtToken.type == lex.TokenType.colourliteral:
+            val = self.crtToken.lexeme
+            self.NextToken()
+            return ast.ASTColourNode(val)
+
+        else:
+            raise Exception("Syntax Error: Expected a literal.")
+
+    # ⟨PadRead⟩
     def ParsePadRead(self):
         if self.crtToken.type != lex.TokenType.kw__read:
             raise Exception("Syntax Error: Expected '__read'")
@@ -41,6 +110,7 @@ class Parser:
 
         return ast.ASTPadReadNode(expr1, expr2)
     
+    # ⟨PadRandI⟩
     def ParsePadRandI(self):
         if self.crtToken.type != lex.TokenType.kw__random_int:
             raise Exception("Syntax Error: Expected '__random_int'")
@@ -48,45 +118,11 @@ class Parser:
 
         expr = self.ParseExpression()
         return ast.ASTPadRandINode(expr)
-                
-    def ParseType(self):
-        if self.crtToken.type in [
-            lex.TokenType.kw_int,
-            lex.TokenType.kw_float,
-            lex.TokenType.kw_bool,
-            lex.TokenType.kw_colour
-        ]:
-            type_name = self.crtToken.lexeme
-            self.NextToken()
-            return type_name
-        else:
-            raise Exception("Syntax Error: Expected a type.")
-
-    def ParseLiteral(self):
-        if self.crtToken.type == lex.TokenType.integer:
-            val = self.crtToken.lexeme
-            self.NextToken()
-            return ast.ASTIntegerNode(val)
-        elif self.crtToken.type == lex.TokenType.floatliteral:
-            val = self.crtToken.lexeme
-            self.NextToken()
-            return ast.ASTFloatNode(val)
-
-        elif self.crtToken.type == lex.TokenType.booleanliteral:
-            val = self.crtToken.lexeme
-            self.NextToken()
-            return ast.ASTBooleanNode(val)
-
-        elif self.crtToken.type == lex.TokenType.colourliteral:
-            val = self.crtToken.lexeme
-            self.NextToken()
-            return ast.ASTColourNode(val)
-
-        else:
-            raise Exception("Syntax Error: Expected a literal.")
         
+    # ⟨FunctionCall⟩
     def ParseFunctionCall(self, function_name):
         # Assumes current token is '('
+        # ⟨ActualParams⟩
         if self.crtToken.type != lex.TokenType.lparen:
             raise Exception("Syntax Error: Expected '(' in function call.")
         self.NextToken()
@@ -106,7 +142,7 @@ class Parser:
 
         return ast.ASTFunctionCallNode(function_name, args)
 
-
+    # ⟨Factor⟩
     def ParseFactor(self):
         tok = self.crtToken
 
@@ -123,6 +159,8 @@ class Parser:
             id_name = tok.lexeme
             index_expr = None
             self.NextToken()
+
+            # ⟨SubExpr⟩
             if self.crtToken.type == lex.TokenType.lbracket:
                 self.NextToken()
                 index_expr = self.ParseExpression()
@@ -142,6 +180,7 @@ class Parser:
             self.NextToken()
             return expr
 
+        # ⟨UnaryOp⟩
         elif tok.type in [lex.TokenType.minus, lex.TokenType.kw_not]:
             op = tok.lexeme
             self.NextToken()
@@ -154,10 +193,12 @@ class Parser:
         elif tok.type == lex.TokenType.kw__random_int:
             return self.ParsePadRandI()
 
+        # ⟨PadWidth⟩
         elif tok.type == lex.TokenType.kw__width:
             self.NextToken()
             return ast.ASTPadWidthNode()
-
+        
+        # ⟨PadHeight⟩
         elif tok.type == lex.TokenType.kw__height:
             self.NextToken()
             return ast.ASTPadHeightNode()
@@ -165,9 +206,11 @@ class Parser:
         else:
             raise Exception(f"Syntax Error: Unexpected token {tok.type} in factor")
 
+    # ⟨Term⟩
     def ParseTerm(self):
         left = self.ParseFactor()
 
+        # ⟨MultiplicativeOp⟩
         while self.crtToken.type in [
             lex.TokenType.multiply,
             lex.TokenType.slash,
@@ -180,9 +223,11 @@ class Parser:
 
         return left
 
+    # ⟨SimpleExpr⟩
     def ParseSimpleExpression(self):
         left = self.ParseTerm()
 
+        # ⟨AdditiveOp⟩
         while self.crtToken.type in [
             lex.TokenType.plus,
             lex.TokenType.minus,
@@ -194,10 +239,12 @@ class Parser:
             left = ast.ASTBinaryOpNode(op, left, right)
 
         return left
-
+    
+    # ⟨Expr⟩
     def ParseExpression(self):
         left = self.ParseSimpleExpression()
 
+        # ⟨RelationalOp⟩
         if self.crtToken.type in [
             lex.TokenType.less,
             lex.TokenType.greater,
@@ -217,20 +264,31 @@ class Parser:
             left = ast.ASTCastNode(left, cast_type)
 
         return left
+    
+    # ⟨Assignment⟩
+    def ParseAssignment(self):
+        if (self.crtToken.type == lex.TokenType.identifier):
+            assignment_lhs = self.ParseExpression()
+            if not isinstance(assignment_lhs, ast.ASTVariableNode):
+                raise Exception("Syntax Error: Left-hand side must be a variable")
 
+        if (self.crtToken.type == lex.TokenType.equals):
+            self.NextToken()
+        assignment_rhs = self.ParseExpression()
+
+        return ast.ASTAssignmentNode(assignment_lhs, assignment_rhs)
+
+    # ⟨VariableDecl⟩
     def ParseVariableDecl(self):
-        # Match 'let'
         if self.crtToken.type != lex.TokenType.kw_let:
             raise Exception("Syntax Error: Expected 'let' at start of variable declaration.")
         self.NextToken()
 
-        # Match identifier
         if self.crtToken.type != lex.TokenType.identifier:
             raise Exception("Syntax Error: Expected identifier after 'let'.")
         identifier = self.crtToken.lexeme
         self.NextToken()
 
-        # Match ':'
         if self.crtToken.type != lex.TokenType.colon:
             raise Exception("Syntax Error: Expected ':' after identifier in declaration.")
         self.NextToken()
@@ -242,16 +300,18 @@ class Parser:
             expr = self.ParseExpression()
             return ast.ASTVariableDeclNode(identifier, vartype, expr)
 
+        # ⟨VariableDeclSuffix⟩
         elif self.crtToken.type == lex.TokenType.lbracket:
             return self.ParseVariableDeclArray(identifier, vartype)
 
         else:
             raise Exception("Syntax Error: Expected '=' or '[' in variable declaration")
         
+    # ⟨VariableDeclArray⟩    
     def ParseVariableDeclArray(self, identifier, vartype):
         self.NextToken()
 
-        # Case 1: declared size [3] = [val]
+        # Case 1: declared size array
         if self.crtToken.type == lex.TokenType.integer:
             size = ast.ASTIntegerNode(self.crtToken.lexeme)
             self.NextToken()
@@ -303,29 +363,8 @@ class Parser:
 
         else:
             raise Exception("Syntax Error: Invalid array declaration format")
-
-
-
-    def ParseAssignment(self):
-        #Assignment is made up of two main parts; the LHS (the variable) and RHS (the expression)
-        if (self.crtToken.type == lex.TokenType.identifier):
-            #create AST node to store the identifier            
-            assignment_lhs = self.ParseExpression()
-            if not isinstance(assignment_lhs, ast.ASTVariableNode):
-                raise Exception("Syntax Error: Left-hand side must be a variable")
-            
-            #print("Variable Token Matched ::: Nxt Token is ", self.crtToken.type, self.crtToken.lexeme)
-
-        if (self.crtToken.type == lex.TokenType.equals):
-            #no need to do anything ... token can be discarded
-            self.NextToken()
-            #print("EQ Token Matched ::: Nxt Token is ", self.crtToken.type, self.crtToken.lexeme)
-
-        #Next sequence of tokens should make up an expression ... therefor call ParseExpression that will return the subtree representing that expression
-        assignment_rhs = self.ParseExpression()
-                
-        return ast.ASTAssignmentNode(assignment_lhs, assignment_rhs)
-    
+        
+    # ⟨PrintStatement⟩    
     def ParsePrintStatement(self):
         if self.crtToken.type != lex.TokenType.kw__print:
             raise Exception("Syntax Error: Expected '__print'")
@@ -334,6 +373,7 @@ class Parser:
         expr = self.ParseExpression()
         return ast.ASTPrintNode(expr)
     
+    # ⟨DelayStatement⟩
     def ParseDelayStatement(self):
         if self.crtToken.type != lex.TokenType.kw__delay:
             raise Exception("Syntax Error: Expected '__delay'")
@@ -342,6 +382,7 @@ class Parser:
         expr = self.ParseExpression()
         return ast.ASTDelayNode(expr)
     
+    # ⟨ClearStatement⟩ which is added to the language
     def ParseClearStatement(self):
         if self.crtToken.type != lex.TokenType.kw__clear:
             raise Exception("Syntax Error: Expected '__clear'")
@@ -350,44 +391,43 @@ class Parser:
         expr = self.ParseExpression()
         return ast.ASTClearNode(expr)
     
+    # ⟨WriteStatement⟩
     def ParseWriteStatement(self):
         if self.crtToken.type == lex.TokenType.kw__write:
             self.NextToken()
             x_expr = self.ParseExpression()
-            if self.crtToken.type != lex.TokenType.comma:
-                raise Exception("Syntax Error: Expected ','")
-            self.NextToken()
+            self.ExpectComma()
             y_expr = self.ParseExpression()
-            if self.crtToken.type != lex.TokenType.comma:
-                raise Exception("Syntax Error: Expected ','")
-            self.NextToken()
+            self.ExpectComma()
             val_expr = self.ParseExpression()
             return ast.ASTWriteNode(x_expr, y_expr, val_expr)
 
         elif self.crtToken.type == lex.TokenType.kw__write_box:
             self.NextToken()
             x_expr = self.ParseExpression()
-            if self.crtToken.type != lex.TokenType.comma:
-                raise Exception("Syntax Error: Expected ','")
-            self.NextToken()
+            self.ExpectComma()
             y_expr = self.ParseExpression()
-            if self.crtToken.type != lex.TokenType.comma:
-                raise Exception("Syntax Error: Expected ','")
-            self.NextToken()
+            self.ExpectComma()
             w_expr = self.ParseExpression()
-            if self.crtToken.type != lex.TokenType.comma:
-                raise Exception("Syntax Error: Expected ','")
-            self.NextToken()
+            self.ExpectComma()
             h_expr = self.ParseExpression()
-            if self.crtToken.type != lex.TokenType.comma:
-                raise Exception("Syntax Error: Expected ','")
-            self.NextToken()
+            self.ExpectComma()
             val_expr = self.ParseExpression()
             return ast.ASTWriteBoxNode(x_expr, y_expr, w_expr, h_expr, val_expr)
 
         else:
             raise Exception("Syntax Error: Expected '__write' or '__write_box'")
         
+    # ⟨RtrnStatement⟩
+    def ParseRtrnStatement(self):
+        if self.crtToken.type != lex.TokenType.kw_return:
+            raise Exception("Syntax Error: Expected '_return'")
+        self.NextToken()
+
+        expr = self.ParseExpression()
+        return ast.ASTRtrnNode(expr)
+        
+    # ⟨IfStatement⟩
     def ParseIfStatement(self):
         if self.crtToken.type != lex.TokenType.kw_if:
             raise Exception("Syntax Error: Expected 'if'")
@@ -412,6 +452,7 @@ class Parser:
 
         return ast.ASTIfNode(condition, then_block, else_block)
     
+    # ⟨ForStatement⟩
     def ParseForStatement(self):
         if self.crtToken.type != lex.TokenType.kw_for:
             raise Exception("Syntax Error: Expected 'for'")
@@ -447,6 +488,7 @@ class Parser:
 
         return ast.ASTForNode(init, condition, update, body)
     
+    # ⟨WhileStatement⟩  
     def ParseWhileStatement(self):
         if self.crtToken.type != lex.TokenType.kw_while:
             raise Exception("Syntax Error: Expected 'while'")
@@ -466,14 +508,7 @@ class Parser:
 
         return ast.ASTWhileNode(condition, body)
     
-    def ParseRtrnStatement(self):
-        if self.crtToken.type != lex.TokenType.kw_return:
-            raise Exception("Syntax Error: Expected '_return'")
-        self.NextToken()
-
-        expr = self.ParseExpression()
-        return ast.ASTRtrnNode(expr)
-    
+    # ⟨FormalParam⟩
     def ParseFormalParam(self):
         if self.crtToken.type != lex.TokenType.identifier:
             raise Exception("Expected identifier in parameter list")
@@ -487,6 +522,7 @@ class Parser:
         param_type = self.ParseType()
         size = None
 
+        # Check for array type
         if self.crtToken.type == lex.TokenType.lbracket:
             self.NextToken()
             if self.crtToken.type != lex.TokenType.integer:
@@ -501,6 +537,7 @@ class Parser:
         
         return (name, param_type, size)
     
+    # ⟨FormalParams⟩
     def ParseFormalParams(self):
         params = [self.ParseFormalParam()]
         while self.crtToken.type == lex.TokenType.comma:
@@ -508,6 +545,7 @@ class Parser:
             params.append(self.ParseFormalParam())
         return params
 
+    # ⟨FunctionDecl⟩
     def ParseFunctionDecl(self):
         if self.crtToken.type != lex.TokenType.kw_fun:
             raise Exception("Syntax Error: Expected 'fun' at start of function declaration")
@@ -550,14 +588,7 @@ class Parser:
         body = self.ParseBlock()
         return ast.ASTFunctionDeclNode(name, params, return_type, return_size, body)
 
-
-
-    def ExpectSemicolon(self):
-        if self.crtToken.type != lex.TokenType.semicolon:
-            raise Exception("Syntax Error: Expected ';' after statement")
-        self.NextToken()
-
-            
+    # ⟨Statement⟩ 
     def ParseStatement(self):
         if self.crtToken.type == lex.TokenType.kw_let:
             stmt = self.ParseVariableDecl()
@@ -600,6 +631,7 @@ class Parser:
         else:
             raise Exception(f"Syntax Error: Unexpected token {self.crtToken.type}")
 
+    # ⟨Block⟩
     def ParseBlock(self):
         if self.crtToken.type != lex.TokenType.lbrace:
             raise Exception("Syntax Error: Expected '{' to start a block")
@@ -614,10 +646,10 @@ class Parser:
             if stmt:
                 block.add_statement(stmt)
 
-        self.NextToken()  # consume '}'
+        self.NextToken()  # Consumes '}'
         return block
 
-
+    # ⟨Program⟩ 
     def ParseProgram(self):
         self.NextToken()
         program = ast.ASTProgramNode()
@@ -627,17 +659,6 @@ class Parser:
                 program.add_statement(stmt)
         return program     
 
+    # Entry point for parsing the entire program into an AST
     def Parse(self):        
         self.ASTroot = self.ParseProgram()
-
-
-parser = Parser(("""
-fun add(a: int, b: int) -> int {
-    let result: int = a + b;
-    __print result;
-}
-"""))
-parser.Parse()
-
-print_visitor = ast.PrintNodesVisitor()
-parser.ASTroot.accept(print_visitor)

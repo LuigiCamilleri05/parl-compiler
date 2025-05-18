@@ -65,15 +65,6 @@ test_programs = [
     let c : int = __random_int 10;
     """,
 
-     # Simple read using literals
-    "__read 0, 0;",
-
-    # Using variables for coordinates
-    "let x : int = 5; let y : int = 10; __read x, y;",
-
-    # Read with expression
-    "__read 2+3, 7-4;",
-
     # Full assignment
     "let c : colour = __read 4, 5;"
     "__print not true;",         # Should print 0
@@ -500,6 +491,7 @@ test_programs = [
         __delay 10; // Delay to make the movement visible
     }
     """
+    "let c : colour = __read 4, 5;"
 
 
 

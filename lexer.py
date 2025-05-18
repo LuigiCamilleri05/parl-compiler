@@ -450,6 +450,26 @@ class Lexer:
             
         return tokens_list;
 
+    # Generates tokens without printing
+    def GenerateTokensNoPrinting(Lexer, src_program_str):
+
+        tokens_list = []
+        src_program_idx = 0;
+
+        token, lexeme = Lexer.NextToken(src_program_str, src_program_idx)
+        tokens_list.append(token);
+
+        while (token != TokenType.end):  
+            src_program_idx = src_program_idx + len(lexeme)    
+            token, lexeme = Lexer.NextToken(src_program_str, src_program_idx)
+            tokens_list.append(token)
+            if (token.type == TokenType.error):
+                break; 
+            if (token.type == TokenType.end):
+                break; 
+            
+        return tokens_list;
+
     
     # List of keywords in PArl
     keywords = {

@@ -1,17 +1,12 @@
-#First some AST Node classes we'll use to build the AST with
-class ASTNode:
-    def __init__(self):
-        self.name = "ASTNode"    
+# This module defines all AST node classes used by the parser and other components.
+# These nodes supports operations such as structure visualization, semantic checks,
+# EBNF validation, and code generation via the visitor pattern.
 
-class ASTStatementNode(ASTNode):
-    def __init__(self):
-        self.name = "ASTStatementNode"
+# Each AST node includs an `accept` method, which delegates to the visitor’s corresponding `visit_` method.
+# This enables flexibility allowing different visitor classes in separate files
+# Each node's constructor (__init__) may store relevant information specific to that node's role in the AST.
 
-class ASTExpressionNode(ASTNode):
-    def __init__(self):
-        self.name = "ASTExpressionNode"
-
-class ASTVariableNode(ASTExpressionNode):
+class ASTVariableNode():
     def __init__(self, lexeme, index_expr=None):
         self.name = "ASTVariableNode"
         self.lexeme = lexeme
@@ -20,23 +15,7 @@ class ASTVariableNode(ASTExpressionNode):
     def accept(self, visitor):
         return visitor.visit_variable_node(self)
 
-class ASTLiteralNode(ASTExpressionNode):
-    def __init__(self, lexeme):
-        self.name = "ASTLiteralNode"
-        self.lexeme = lexeme
-
-    def accept(self, visitor):
-        visitor.visit_literal_node(self)
-
-class ASTTypeNode(ASTExpressionNode):
-    def __init__(self, lexeme):
-        self.name = "ASTTypeNode"
-        self.lexeme = lexeme
-
-    def accept(self, visitor):
-        visitor.visit_type_node(self)
-
-class ASTIntegerNode(ASTExpressionNode):
+class ASTIntegerNode():
     def __init__(self, v):
         self.name = "ASTIntegerNode"
         self.value = v
@@ -44,7 +23,7 @@ class ASTIntegerNode(ASTExpressionNode):
     def accept(self, visitor):
         return visitor.visit_integer_node(self)  
 
-class ASTFloatNode(ASTExpressionNode):
+class ASTFloatNode():
     def __init__(self, v):
         self.name = "ASTFloatNode"
         self.value = v
@@ -52,7 +31,7 @@ class ASTFloatNode(ASTExpressionNode):
     def accept(self, visitor):
         return visitor.visit_float_node(self)
 
-class ASTBooleanNode(ASTExpressionNode):
+class ASTBooleanNode():
     def __init__(self, v):
         self.name = "ASTBooleanNode"
         self.value = v
@@ -60,7 +39,7 @@ class ASTBooleanNode(ASTExpressionNode):
     def accept(self, visitor):
         return visitor.visit_boolean_node(self)
 
-class ASTColourNode(ASTExpressionNode):
+class ASTColourNode():
     def __init__(self, v):
         self.name = "ASTColourNode"
         self.value = v
@@ -68,7 +47,7 @@ class ASTColourNode(ASTExpressionNode):
     def accept(self, visitor):
         return visitor.visit_colour_node(self)
 
-class ASTPrintNode(ASTStatementNode):
+class ASTPrintNode():
     def __init__(self, expr):
         self.name = "ASTPrintNode"
         self.expr = expr  
@@ -76,7 +55,7 @@ class ASTPrintNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_print_node(self)
 
-class ASTDelayNode(ASTStatementNode):
+class ASTDelayNode():
     def __init__(self, expr):
         self.name = "ASTDelayNode"
         self.expr = expr  
@@ -84,7 +63,7 @@ class ASTDelayNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_delay_node(self)
 
-class ASTClearNode(ASTStatementNode):
+class ASTClearNode():
     def __init__(self, expr):
         self.name = "ASTClearNode"
         self.expr = expr  
@@ -92,7 +71,7 @@ class ASTClearNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_clear_node(self)
 
-class ASTWriteNode(ASTStatementNode):
+class ASTWriteNode():
     def __init__(self, x_expr, y_expr, val_expr):
         self.name = "ASTWriteNode"
         self.x_expr = x_expr
@@ -103,7 +82,7 @@ class ASTWriteNode(ASTStatementNode):
         visitor.visit_write_node(self)
 
 
-class ASTWriteBoxNode(ASTStatementNode):
+class ASTWriteBoxNode():
     def __init__(self, x_expr, y_expr, w_expr, h_expr, val_expr):
         self.name = "ASTWriteBoxNode"
         self.x_expr = x_expr
@@ -115,17 +94,17 @@ class ASTWriteBoxNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_write_box_node(self)
 
-class ASTIfNode(ASTStatementNode):
+class ASTIfNode():
     def __init__(self, condition_expr, then_block, else_block=None):
         self.name = "ASTIfNode"
-        self.condition_expr = condition_expr        # ASTExpressionNode
-        self.then_block = then_block                # ASTBlockNode
-        self.else_block = else_block                # ASTBlockNode or None
+        self.condition_expr = condition_expr        
+        self.then_block = then_block                
+        self.else_block = else_block                
 
     def accept(self, visitor):
         visitor.visit_if_node(self)
 
-class ASTForNode(ASTNode):
+class ASTForNode():
     def __init__(self, init, condition, update, body):
         self.name = "ASTForNode"
         self.init = init        
@@ -136,7 +115,7 @@ class ASTForNode(ASTNode):
     def accept(self, visitor):
         return visitor.visit_for_node(self)
     
-class ASTWhileNode(ASTNode):
+class ASTWhileNode():
     def __init__(self, condition, body):
         self.name = "ASTWhileNode"
         self.condition = condition
@@ -145,7 +124,7 @@ class ASTWhileNode(ASTNode):
     def accept(self, visitor):
         return visitor.visit_while_node(self)
     
-class ASTRtrnNode(ASTStatementNode):
+class ASTRtrnNode():
     def __init__(self, expr):
         self.name = "ASTRtrnNode"
         self.expr = expr  
@@ -153,7 +132,7 @@ class ASTRtrnNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_rtrn_node(self)
 
-class ASTFunctionDeclNode(ASTNode):
+class ASTFunctionDeclNode():
     def __init__(self, name, params, return_type, return_size, body):
         self.name = name
         self.params = params  
@@ -164,70 +143,70 @@ class ASTFunctionDeclNode(ASTNode):
     def accept(self, visitor):
         return visitor.visit_function_decl_node(self)
 
-class ASTFunctionCallNode(ASTExpressionNode):
+class ASTFunctionCallNode():
     def __init__(self, func_name, args):
         self.name = "ASTFunctionCallNode"
         self.func_name = func_name
-        self.args = args  # list of ASTExpressionNode
+        self.args = args  
 
     def accept(self, visitor):
         return visitor.visit_function_call_node(self)
 
 
-class ASTBinaryOpNode(ASTExpressionNode):
+class ASTBinaryOpNode():
     def __init__(self, op, left, right):
         self.name = "ASTBinaryOpNode"
-        self.op = op              # string, e.g., "+", "*", "==", etc.
-        self.left = left          # ASTExpressionNode
-        self.right = right        # ASTExpressionNode
+        self.op = op              
+        self.left = left          
+        self.right = right        
 
     def accept(self, visitor):
         return visitor.visit_binary_op_node(self)
 
-class ASTUnaryOpNode(ASTExpressionNode):
+class ASTUnaryOpNode():
     def __init__(self, op, operand):
         self.name = "ASTUnaryOpNode"
-        self.op = op              # string, e.g., "-", "not"
-        self.operand = operand    # ASTExpressionNode
+        self.op = op              
+        self.operand = operand    
 
     def accept(self, visitor):
         return visitor.visit_unary_op_node(self)
 
-class ASTCastNode(ASTExpressionNode):
+class ASTCastNode():
     def __init__(self, expr, target_type):
         self.name = "ASTCastNode"
-        self.expr = expr              # ASTExpressionNode
-        self.target_type = target_type  # string, e.g., "float", "int", etc.
+        self.expr = expr             
+        self.target_type = target_type  
 
     def accept(self, visitor):
         return visitor.visit_cast_node(self)
 
-class ASTArrayDeclNode(ASTStatementNode):
+class ASTArrayDeclNode():
     def __init__(self, identifier, vartype, size_expr, values):
         self.name = "ASTArrayDeclNode"
-        self.identifier = identifier      # str — variable name
-        self.vartype = vartype            # str — "int", "float", etc.
-        self.size_expr = size_expr        # ASTIntegerNode or None
-        self.values = values              # list of ASTLiteralNode
+        self.identifier = identifier      
+        self.vartype = vartype            
+        self.size_expr = size_expr       
+        self.values = values              
 
     def accept(self, visitor):
         visitor.visit_array_decl_node(self)
 
-class ASTPadWidthNode(ASTExpressionNode):
+class ASTPadWidthNode():
     def __init__(self):
         self.name = "ASTPadWidthNode"
 
     def accept(self, visitor):
         return visitor.visit_pad_width_node(self)
 
-class ASTPadHeightNode(ASTExpressionNode):
+class ASTPadHeightNode():
     def __init__(self):
         self.name = "ASTPadHeightNode"
 
     def accept(self, visitor):
         return visitor.visit_pad_height_node(self)
 
-class ASTPadReadNode(ASTExpressionNode):
+class ASTPadReadNode():
     def __init__(self, expr1, expr2):
         self.name = "ASTPadReadNode"
         self.expr1 = expr1
@@ -236,8 +215,7 @@ class ASTPadReadNode(ASTExpressionNode):
     def accept(self, visitor):
         return visitor.visit_pad_read_node(self)
 
-
-class ASTPadRandINode(ASTExpressionNode):
+class ASTPadRandINode():
     def __init__(self, expr):
         self.name = "ASTPadRandINode"
         self.expr = expr
@@ -245,7 +223,7 @@ class ASTPadRandINode(ASTExpressionNode):
     def accept(self, visitor):
         return visitor.visit_pad_rand_int_node(self)
 
-class ASTVariableDeclNode(ASTStatementNode):
+class ASTVariableDeclNode():
     def __init__(self, identifier, vartype, expr):
         self.name = "ASTVariableDeclNode"
         self.identifier = identifier  
@@ -255,16 +233,16 @@ class ASTVariableDeclNode(ASTStatementNode):
     def accept(self, visitor):
         visitor.visit_variable_decl_node(self)
 
-class ASTAssignmentNode(ASTStatementNode):
+class ASTAssignmentNode():
     def __init__(self, ast_var_node, ast_expression_node):
-        self.name = "ASTStatementNode"        
+        self.name = "ASTAssignmentNode"        
         self.id   = ast_var_node
         self.expr = ast_expression_node
 
     def accept(self, visitor):
         visitor.visit_assignment_node(self)                
 
-class ASTBlockNode(ASTNode):
+class ASTBlockNode():
     def __init__(self):
         self.name = "ASTBlockNode"
         self.stmts = []
@@ -275,7 +253,7 @@ class ASTBlockNode(ASTNode):
     def accept(self, visitor):
         visitor.visit_block_node(self)        
 
-class ASTProgramNode(ASTNode):
+class ASTProgramNode():
     def __init__(self):
         self.name = "ASTProgramNode"
         self.stmts = []
@@ -286,92 +264,9 @@ class ASTProgramNode(ASTNode):
     def accept(self, visitor):
         visitor.visit_program_node(self)
 
-class ASTVisitor:
-    def visit_integer_node(self, node):
-        raise NotImplementedError()
-
-    def visit_variable_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_float_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_boolean_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_colour_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_print_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_delay_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_clear_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_write_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_write_box_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_if_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_for_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_while_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_rtrn_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_function_decl_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_function_call_node(self, node):
-        raise NotImplementedError()
-
-    def visit_binary_op_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_unary_op_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_cast_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_variable_decl_node(self, node):
-        raise NotImplementedError()
-
-    def visit_pad_width_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_pad_height_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_pad_read_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_pad_rand_int_node(self, node):
-        raise NotImplementedError()
-
-    def visit_assignment_node(self, node):
-        raise NotImplementedError()
-    
-    def visit_block_node(self, node):
-        raise NotImplementedError()
-    
-    def inc_tab_count(self):
-        raise NotImplementedError()
-    
-    def dec_tab_count(self):
-        raise NotImplementedError()
-
-class PrintNodesVisitor(ASTVisitor):
+# Visitor class that traverses the AST and prints the structure
+# Uses accepts, visit methods and tabs to show the structure of the tree
+class PrintNodesVisitor():
     def __init__(self):
         self.name = "Print Tree Visitor"
         self.node_count = 0

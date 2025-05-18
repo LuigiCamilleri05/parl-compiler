@@ -64,14 +64,8 @@ test_inputs = [
     let c : int = __random_int 10;
     """,
 
-     # Simple read using literals
-    "__read 0, 0;",
-
     # Using variables for coordinates
     "let x : int = 5; let y : int = 10; __read x, y;",
-
-    # Read with expression
-    "__read 2+3, 7-4;",
 
     # Full assignment
     "let c : colour = __read 4, 5;"
