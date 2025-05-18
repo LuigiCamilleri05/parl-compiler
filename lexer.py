@@ -3,7 +3,7 @@
 # enum for token types
 from enum import Enum
 
-# TokenType enum represents different token types
+# TokenType enum representing different token types
 class TokenType(Enum):
     identifier = 1
     integer = 2
@@ -67,42 +67,50 @@ class TokenType(Enum):
     kw__clear = 60
 
 
-# Token class represents a token with its type and lexeme
+# Token class representing a token with its type and lexeme
 class Token:
     def __init__(self, t, l):
         self.type = t
         self.lexeme = l        
 
-# Lexer class handles the lexical analysis of the input
+# Lexer class handling the lexical analysis of the input
 class Lexer:
     def __init__(self):
-        # Initializes the chcaracter categories
+        # Initializing the character categories
         self.lexeme_list = ["letter", "digit", "hexletter", "underscore", "plus", "minus",
                             "multiply", "slash", "equals", "less", "greater", 
                             "excl", "lparen", "rparen", "lbrace", "rbrace",
                             "lbracket", "rbracket", "colon", "comma", "semicolon",
                             "hash", "dot","whitespace", "newline", "other",]
-        # Initializes the states and accepting states
+        # Initializing the states and accepting states
         self.states_list = list(range(47))  
         self.states_accp = list(range(1, 24)) + [25] + list(range(28, 34)) + [39, 41, 44, 46]
 
-        # Initializes the transition table
+        # Initializing the rows and columns for the transition table and creating the table
         self.rows = len(self.states_list)
         self.cols = len(self.lexeme_list)
         self.Tx = [[-1 for j in range(self.cols)] for i in range(self.rows)]
         self.InitialiseTxTable();     
 
-
+    # Method initializing the transitions in the transition table
+    # Once the lexeme runs out of characters, the token is validated in GetTokenTypeByFinalState 
     def InitialiseTxTable(self):
+
+        # Sets the transition table with the states and lexeme categories
+        # s = state, l = lexeme, n = next state
         def set_tx(s, l, n):
             self.Tx[s][self.lexeme_list.index(l)] = n
 
         # Identifiers
+        # If the first character is a letter or underscore, it may be an identifier
         set_tx(0, "letter", 1)
         set_tx(0, "hexletter", 1)
+
+        # Loops through the tokens as long as it is in the identifier criteria
         for l in ["letter", "hexletter", "underscore", "digit"]:
             set_tx(1, l, 1)
 
+        # Can only start with two underscores or else it is not an identifier
         set_tx(0, "underscore", 45)
         set_tx(45, "underscore", 46)
         set_tx(46, "letter", 46)
@@ -127,11 +135,11 @@ class Lexer:
         for key, val in ops.items():
             set_tx(0, key, val)
 
-        # Floats
+        # Floats (after all the digits are processed, if the next value is a dot, it will be a float)
         set_tx(2, "dot", 24)
         set_tx(24, "digit", 25)
         set_tx(25, "digit", 25)
-        set_tx(25, "letter", 26)
+        set_tx(25, "letter", 26) # For exponential notation
         # For floats with plus or minus sign
         for l in ["plus", "minus"]:
             set_tx(26, l, 27)
@@ -176,7 +184,7 @@ class Lexer:
             self.Tx[43][i] = 42
         set_tx(43, "slash", 44)
 
-    # Checks if the state is an accepting state
+    # Checks if the state is an accepting state to determine if the token is valid
     def AcceptingStates(self, state):
         try:
             self.states_accp.index(state)
@@ -190,11 +198,14 @@ class Lexer:
             # Check if the lexeme is a keyword or identifier
             if lexeme in self.keywords:
                 return Token(self.keywords[lexeme], lexeme)
+            # Check if the lexeme is a boolean literal or type
             elif lexeme in ["true", "false"]:
                 return Token(TokenType.booleanliteral, lexeme)
+            # Checks if the lexeme is a type
             elif lexeme in ["float", "int", "bool", "colour"]:
                 return Token(TokenType.type, lexeme)
             else:
+                # Check if the lexeme is a valid identifier since everything else was checked else error
                 return Token(TokenType.identifier, lexeme)
         elif state == 2:
             return Token(TokenType.integer, lexeme)
@@ -242,8 +253,6 @@ class Lexer:
             return Token(TokenType.newline, lexeme)
         elif state == 25 or state == 28:
             return Token(TokenType.floatliteral, lexeme)
-
-        # Compound operators
         elif state == 29:
             return Token(TokenType.equal_equal, lexeme)
         elif state == 30:
@@ -252,30 +261,29 @@ class Lexer:
             return Token(TokenType.less_equal, lexeme)
         elif state == 32:
             return Token(TokenType.greater_equal, lexeme)
-        
-        # Arrow operator
         elif state == 33:
             return Token(TokenType.arrow, lexeme)
-        
         elif state == 39:
             return Token(TokenType.colourliteral, lexeme)
-        
-        # Comments
         elif state == 41:
             return Token(TokenType.linecomment, lexeme)
         elif state == 44:
             return Token(TokenType.blockcomment, lexeme)
         elif state == 46:
+            # Checks for keywords with two underscores else it is a normal keyword
             if lexeme in self.underscore_keywords:
                 return Token(self.underscore_keywords[lexeme], lexeme)
             else:
                 return Token(TokenType.error, lexeme)
-    
+
+        # If everything else fails, it is an error    
         else:
             return Token(TokenType.error, lexeme)
 
+    # Returns the category of the character
     def CatChar(self, character):
 
+        # hexletter and letters are split to check for colour literals
         if character in 'ABCDEFabcdef':
             return "hexletter"
         elif character.isalpha():
@@ -335,7 +343,7 @@ class Lexer:
         else:
             return "other"
 
-    # Checks if the end of the input is reached by comparing the index with the length of the string
+    # Checks if the end of the input is reached by comparing the index with the length of the input string
     def EndOfInput(self, src_program_str, src_program_idx):
         if (src_program_idx > len(src_program_str)-1):
             return True;
@@ -354,8 +362,9 @@ class Lexer:
         state = 0  
         stack = []
         lexeme = ""
-        stack.append(-2); # -2 is a marker for the stack to indicate that it is empty 
+        stack.append(-2); # -2 is a marker for the stack which indicates that it is empty 
         
+        # Checks if the end of the input is reached
         if self.EndOfInput(src_program_str, src_program_idx):
             return Token(TokenType.end, "end"), "end"
 
@@ -369,6 +378,8 @@ class Lexer:
             # Gets the next character and adds it to the lexeme
             exists, character = self.NextChar(src_program_str, src_program_idx);
             lexeme += character
+
+            # Checks if the character is a newline
             if (not exists): 
                 if state == 40:
                     character = "\n"
@@ -382,38 +393,49 @@ class Lexer:
             cat = self.CatChar(character);
             state = self.Tx[state][self.lexeme_list.index(cat)];
             
-        # Rmoves the last character from the lexeme
+        # Removes the last character from the lexeme
         lexeme = lexeme[:-1]
 
+        # Flag for syntax error
         syntax_error = False;
         
-        # Checks for errrs
+        # Checks for errors
         while (len(stack) > 0):
+            # -2 indicates that the stack has an eror
             if (stack[-1] == -2): 
                 syntax_error = True
                 break   
+            # If the state is not an accepting state, pop the stack and remove the last character from the lexeme
             if (not self.AcceptingStates(stack[-1])):
                 stack.pop();
                 print("POPPED => ", stack)
                 lexeme = lexeme[:-1]
             else:
+                # If the state is an accepting state, break the loop and return the state
                 state = stack.pop()
                 break
         if syntax_error:
             return Token(TokenType.error, "error"), "error"
+        # If the state is an accepting state, return the token type and lexeme
         if self.AcceptingStates(state):
             return self.GetTokenTypeByFinalState(state, lexeme), lexeme
         else: 
             return Token(TokenType.error, "error"), "error"
         
-    # Generates tokens from the input string
+    # Generates tokens from the input string used for testing
     def GenerateTokens(Lexer, src_program_str):
+
+        # Initialising function
         print("INPUT:: " + src_program_str)
         tokens_list = []
         src_program_idx = 0;
+
+        # Getting the first token and lexeme
         token, lexeme = Lexer.NextToken(src_program_str, src_program_idx)
         tokens_list.append(token);
 
+        # Loop which finds the next token and lexeme and prints the type, lexeme, it's length and the index
+        # Until the end of the input is reached
         while (token != TokenType.end):  
             src_program_idx = src_program_idx + len(lexeme)    
             token, lexeme = Lexer.NextToken(src_program_str, src_program_idx)
