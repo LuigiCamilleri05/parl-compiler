@@ -6,29 +6,32 @@ from symbol_table import SymbolTable
 
 # Class used to generate code
 class CodeGenerator:
+
     def __init__(self):
         self.symbol_table = SymbolTable()
         self.current_return_type = None
-        self.instructions = []
+        self.instructions = [] # List to store generated instructions
 
     def does_block_always_return(self, block_node):
-        """
-        Determines whether all control paths in this block lead to a return.
-        """
+
         for stmt in block_node.stmts:
+
             if isinstance(stmt, ASTRtrnNode):
                 return True
+            
             elif isinstance(stmt, ASTIfNode):
                 then_returns = self.does_block_always_return(stmt.then_block)
                 else_returns = self.does_block_always_return(stmt.else_block) if stmt.else_block else False
                 if then_returns and else_returns:
                     return True
+                
             elif isinstance(stmt, ASTWhileNode):
-                # Loops might not run, so we can't guarantee a return
                 continue
+
             elif isinstance(stmt, ASTBlockNode):
                 if self.does_block_always_return(stmt):
                     return True
+                
         return False
     
     def count_local_vars(self, block):
@@ -51,10 +54,16 @@ class CodeGenerator:
                 count += self.count_local_vars(stmt.body)
         return count
     
+    # Function used to emit instructions and store them in the instructions list
     def emit(self, instr):
         self.instructions.append(instr)
 
+# Visitor methods below implement type-checking 
+# rules and code generation for each AST node type
+
     def visit_boolean_node(self, node):
+            # Emits code for boolean literals based on
+            # the value of the node, (true = 1, false = 0)
             if node.value == "true":
                 self.emit("push 1")
             elif node.value == "false":
@@ -64,6 +73,7 @@ class CodeGenerator:
             return "bool"
 
     def visit_integer_node(self, node):
+        # Emits the integer value of the node
         self.emit(f"push {node.value}")
         return "int"
 
@@ -72,23 +82,24 @@ class CodeGenerator:
         return "float"
 
     def visit_colour_node(self, node):
-        # Strip "#" and convert hex to int
+        # Converts the colour string to an integer
+        # and emits the value 
         colour_int = int(node.value.lstrip("#"), 16)
         self.emit(f"push {colour_int}")
         return "colour"
     
     def visit_pad_width_node(self, node):
-        # PAD width is always an integer
         self.emit("width")
         return "int"
 
     def visit_pad_height_node(self, node):
-        # PAD height is always an integer
         self.emit("height")
         return "int"
 
     def visit_pad_read_node(self, node):
-        # Both x and y coordinates must be int
+
+        # Switched the order of x and y 
+        # to match the stack frame appoach
         y_type = node.expr2.accept(self)
         x_type = node.expr1.accept(self)
     
@@ -98,7 +109,7 @@ class CodeGenerator:
             raise Exception(f"Type Error: __read expects int for y, got {y_type}")
         self.emit("read")
 
-        return "colour"  # __read returns a colour value
+        return "colour"
 
     def visit_pad_rand_int_node(self, node):
         bound_type = node.expr.accept(self)
@@ -108,12 +119,14 @@ class CodeGenerator:
         return "int"
     
     def visit_binary_op_node(self, node):
+
+        # Switch the order due to stack frame approach
         right_type = node.right.accept(self)
         left_type = node.left.accept(self)
-        
         if left_type != right_type:
             raise Exception(f"Type Error: Mismatched operands: {left_type} and {right_type}")
-
+        
+        # Emits code based on the operator
         if node.op in ["+", "-", "*", "/"]:
             if left_type not in ["int", "float"]:
                 raise Exception(f"Type Error: Arithmetic operator '{node.op}' requires int or float operands")
@@ -125,9 +138,7 @@ class CodeGenerator:
                 self.emit("mul")
             elif node.op == "/":
                 self.emit("div")
-            
             return left_type
-
         elif node.op in ["<", ">", "<=", ">=", "==", "!="]:
             if node.op == "<":
                 self.emit("lt")
@@ -143,7 +154,6 @@ class CodeGenerator:
             elif node.op == ">=":
                 self.emit("ge")
             return "bool"
-
         elif node.op in ["and", "or"]:
             if left_type != "bool":
                 raise Exception(f"Type Error: Logical operator '{node.op}' requires bool operands")
@@ -152,56 +162,62 @@ class CodeGenerator:
             elif node.op == "or":
                 self.emit("or")
             return "bool"
-
         else:
             raise Exception(f"Semantic Error: Unknown binary operator '{node.op}'")
 
     def visit_function_call_node(self, node):
-        # Check if function is declared
+        
         entry = self.symbol_table.lookup(node.func_name)
         func_entry = entry["type"]
         if func_entry is None:
             raise Exception(f"Function '{node.func_name}' not declared before use.")
 
-        # Check that it is a function
         if func_entry['kind'] != 'function':
             raise Exception(f"Identifier '{node.func_name}' is not a function.")
 
-        # Check argument count
         expected_params = func_entry['params']
         if len(expected_params) != len(node.args):
             raise Exception(f"Function '{node.func_name}' expects {len(expected_params)} argument(s), got {len(node.args)}.")
 
         for (arg_node, (param_name, param_type, _)) in zip(node.args, expected_params):
             if param_type.endswith("[]"):
-                # This is an array parameter
+                
+                # Looks up the the function's array entry and gets
+                # the size of the array, index of last element and level
                 entry = self.symbol_table.lookup(arg_node.lexeme)
                 index = entry["index"]
                 level = entry["level"]
                 size = entry["size"]
+
+                # Calculate the access level 
+                # (The level currently - the level of the array entry)
                 access_level = self.symbol_table.scope_levels[-1] - level
 
-                # Push size of array
+                # Pushes size of array
                 self.emit(f"push {size}")
-                # Push offset and frame level of array
+                # Pushes offset and frame level of array
                 self.emit(f"pusha [{index}:{access_level}]")
+                # Pushes the length of the number 
+                # of arguments == size of the array
                 self.emit(f"push {size}")
+
+                # Flag to indicate that the argument is an array
                 is_array = True
             else:
+                # Argument is not an array
                 is_array = False
                 arg_type = arg_node.accept(self)
                 if arg_type != param_type:
                     raise Exception(f"In call to '{node.func_name}', expected type '{param_type}' for argument '{param_name}', got '{arg_type}'.")
-                    # 2. Push number of arguments
 
+        # If the argument is not an array, push the number of arguments
         if not is_array:
             self.emit(f"push {len(node.args)}")            
         
-
-        # 3. Push function label
+        # Pushes the function label
         self.emit(f"push .{node.func_name}")
 
-        # 4. Emit call
+        # Emits call as the structure of PArIR
         self.emit("call")
 
         return func_entry['return_type']
@@ -218,10 +234,8 @@ class CodeGenerator:
         elif node.op == "-":
             if operand_type not in {"int", "float"}:
                 raise Exception("Type Error: Unary '-' operator requires int or float operand")
-            # Simulate 0 - operand by:
-            # 1. Evaluating operand (already done above)
-            # 2. Pushing 0 after operand is on stack
-            # 3. Calling `sub`, which pops b then a → computes a - b
+            # Simulates the - operand by:
+            # pushing -1 and multiplying
             self.emit("push -1")
             self.emit("mul")
             return operand_type
@@ -238,7 +252,8 @@ class CodeGenerator:
         if var_type != expr_type:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
         
-            # Get index and level manually for the store
+        # Get index and level from lookup to push
+        # and store the variable's index and access level
         entry = self.symbol_table.lookup(node.id.lexeme)
         index = entry["index"]
         level = entry["level"]
@@ -272,6 +287,9 @@ class CodeGenerator:
         expr_type = node.expr.accept(self)
         if expr_type != var_type:
             raise Exception(f"Type Error: Cannot assign {expr_type} to variable of type {var_type}")
+        
+        # Get index and level from lookup to push 
+        # and store after declaring the variable
         entry  = self.symbol_table.lookup(node.identifier)
         index = entry["index"]
         level = entry["level"]
@@ -281,19 +299,29 @@ class CodeGenerator:
         self.emit("st")
 
     def visit_variable_node(self, node):
+
+        # Finds the entry in the symbol table
+        # and gets the type, index and level
         entry = self.symbol_table.lookup(node.lexeme)
         var_type = entry["type"]
         index = entry["index"]
-        declevel = entry["level"]
-        access_level = self.symbol_table.scope_levels[-1] - declevel
+        level = entry["level"]
+        access_level = self.symbol_table.scope_levels[-1] - level
+
+        # Checks if the variable is an array
         if node.index_expr is not None:
+            # Gets the index type from the index expression
             idx_type = node.index_expr.accept(self)
+            # Index expression must be an integer
             if idx_type != "int":
                 raise Exception("Type Error: Array index must be an integer")
+            # Pushes the index expression if suppresss_emit is not set
             if not getattr(self, "suppress_emit", False): 
                 self.emit(f"push +[{index}:{access_level}]")           
             return var_type[:-2]          
 
+        # If the variable is not an array, push the index and access level
+        # as long as suppress_emit is not set
         if not getattr(self, "suppress_emit", False):
             self.emit(f"push [{index}:{access_level}]")
 
@@ -314,13 +342,12 @@ class CodeGenerator:
                 values=node.values
             )
 
-        # Check the type of the size expression
         if node.size_expr:
             size_type = node.size_expr.accept(self)
             if size_type != "int":
                 raise Exception("Type Error: Array size must be of type 'int'")
 
-        # Check each value's type
+        # Reversed to match the stack frame approach
         for val in reversed(node.values):
             val_type = val.accept(self)
             if val_type != base_type:
@@ -328,19 +355,20 @@ class CodeGenerator:
                     f"Type Error: Array '{node.identifier}' expects elements of type '{base_type}', got '{val_type}'"
                 )
 
-        self.emit(f"push {len(node.values)}")  # number of values
+        # Emit code to push the number values onto the stack
+        self.emit(f"push {len(node.values)}")
 
+        # Looks up the array entry in the symbol table
+        # and gets the index and level and stores the array
         entry = self.symbol_table.lookup(node.identifier)
         index = entry["index"]
         level = entry["level"]
         access_level = self.symbol_table.scope_levels[-1] - level
         self.emit(f"push {index}")
         self.emit(f"push {access_level}")
-
-        self.emit("sta")  # store array to stack
+        self.emit("sta")
 
     def visit_print_node(self, node):
-        # No specific type requirement for print
         node.expr.accept(self)
         self.emit("print")
 
@@ -406,60 +434,70 @@ class CodeGenerator:
         if node.else_block:
 
             self.emit("push #PC+1")  # Placeholder for jump target
-            self.emit("cjmp")
+            # Puses conditional jump, activates if condition is true
+            self.emit("cjmp") 
+            # Gets the index of push #PC+1 before cjmp
             cjmp_index = len(self.instructions) - 1
 
+            # Starts with the else block
+            # due to the stack frame approach
             node.else_block.accept(self)
 
             # Jump over else block
             self.emit("push #PC+1")  # Placeholder
             self.emit("jmp")
+            # Gets the index of push #PC+1 before jmp
             jmp_index = len(self.instructions) - 1
 
-            # Patch cjmp
+            # Gets the number of instructions that
+            # need to be skipped after conditional jump
             self.instructions[cjmp_index - 1] = f"push #PC+{len(self.instructions) - cjmp_index + 1}"
             
+            # Emits the then block (first block in PARl)
             node.then_block.accept(self)
 
-            # Patch jump over else
+            # Gets the number of instructions that
+            # need to be skipped after unconditional jump
             self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
         else:
-            self.emit("push #PC+4")  # Always +4
-            self.emit("cjmp")
+            # Always +4 to jmp over the jmp and cjmps
+            self.emit("push #PC+4")
 
+            # Same logic as above, but without the else block  
+            self.emit("cjmp")
             cjmp_index = len(self.instructions) - 1
 
             self.emit("push #PC+1")  # Placeholder for jump target
             self.emit("jmp")
-
             jmp_index = len(self.instructions) - 1
             node.then_block.accept(self)
             self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
 
+    # Used similar logic to if node
+    # but with a different order of the blocks
     def visit_for_node(self, node):
+
+        # Used to match oframe/cframe in PArIR
         self.symbol_table.enter_scope()
-        
-        
-       # Handle init (could be one or more variable declarations)
+    
         if node.init:
+            # Checks for multiple declarations
             if isinstance(node.init, list):
                 count = sum(isinstance(decl, ASTVariableDeclNode) for decl in node.init)
             else:
                 count = 1  # assume one declaration
+            # Emits the number of variables and oframe
             self.emit(f"push {count}")
             self.emit("oframe")
             node.init.accept(self)
         else:
+            # No declarations and opens a frame
             self.emit("push 0")
             self.emit("oframe")
-        
-
-            
-
-        # 2. Remember start of condition
+    
+        # Keeps track of the line number of the start of the condition
         cond_index = len(self.instructions)
 
-        # 3. Emit condition (e.g., i < 64)
         if node.condition:
             cond_type = node.condition.accept(self)
             if cond_type != "bool":
@@ -467,56 +505,56 @@ class CodeGenerator:
         else:
             raise Exception("Syntax Error: for-loop requires a condition")
 
-        # 4. Emit conditional jump to stay in loop if true
-        self.emit("push #PC+4")  # jump forward to stay in loop
+        # Emits conditional jump to stay in loop if true
+        self.emit("push #PC+4")  # skips over the jmp and cjmp
         self.emit("cjmp")
 
-        # 5. Emit unconditional jump to exit loop if condition is false
-        self.emit("push #PC+1")  # placeholder to jump after body
+        # Emits unconditional jump to exit loop if condition is false
+        self.emit("push #PC+1")  # placeholder
         self.emit("jmp")
         jmp_to_end_index = len(self.instructions) - 1
 
-        # 6. Emit body (open block scope)
         node.body.accept(self)
 
-        # 7. Emit update (e.g., i = i + 1)
         if node.update:
             node.update.accept(self)
 
-        # 8. Jump back to condition
+        # Jumps back to condition
         self.emit(f"push #PC-{len(self.instructions) - cond_index}")
         self.emit("jmp")
 
-        # 9. Patch jump that exits the loop
+        # Gets the number of instructions that goes to the end of the block
         self.instructions[jmp_to_end_index - 1] = f"push #PC+{len(self.instructions) - jmp_to_end_index + 1}"
         self.emit("cframe")
         self.symbol_table.exit_scope()
 
     def visit_while_node(self, node):
-        loop_start_index = len(self.instructions)  # mark the start of the condition check
+        # Marks the start of the loop
+        loop_start_index = len(self.instructions)  
 
-        # 1. Evaluate the condition
         cond_type = node.condition.accept(self)
         if cond_type != "bool":
             raise Exception("Type Error: Condition in 'while' must be boolean")
 
-        # 2. Emit placeholder for conditional jump if false (exit loop)
+        # Skips over the jmp and cjmp if cjmp is true
         self.emit("push #PC+4") 
         self.emit("cjmp")
-        cjmp_index = len(self.instructions) - 1
+
         self.emit("push #PC+1")  # Placeholder for jump target
         self.emit("jmp")
         jmp_index = len(self.instructions) - 1
 
-        # 3. Emit loop body
+        # Emits the body of the loop
         node.body.accept(self)
 
-        # 4. Jump back to start of condition
+        # Find instruction number to jump back to the condition
         self.emit(f"push #PC-{len(self.instructions) - loop_start_index}")
         self.emit("jmp")
         self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
         
     def visit_function_decl_node(self, node):
+
+        # Check if the function is declared in the global scope
         if len(self.symbol_table.scopes) != 2:
             raise Exception("Semantic Error: Functions must be declared in the global scope.")
         
@@ -527,11 +565,14 @@ class CodeGenerator:
                 'return_type': node.return_type
             })
 
-        self.emit("push #PC+1")
+
+        self.emit("push #PC+1") # Placeholder for jump target
         self.emit("jmp")
         jmp_index = len(self.instructions) - 1
+        # Emits the function label
         self.emit(f".{node.name}")
 
+        # Enters a new scope for the function
         self.symbol_table.enter_scope()
 
         for name, typ, size_expr in node.params:
@@ -547,22 +588,29 @@ class CodeGenerator:
 
         self.current_return_type = node.return_type
 
+        # Used to count the number of local variables in the function
         num_locals = self.count_local_vars(node.body)
+        # Gets the number of local variables in an array
         for name, typ, size_expr in node.params:
             if isinstance(typ, str) and typ.endswith("[]"):
                 if isinstance(size_expr, ASTIntegerNode):
                     num_locals += int(size_expr.value)
             else:
+                # If the parameter is not an array, just count it
                 num_locals += 1
         self.emit(f"push {num_locals}")
+        # alloc is used to allocate space for local variables
         self.emit("alloc")
 
-        # ✅ Avoid visit_block_node here to skip oframe/cframe
+        # Avoid visit_block_node here to skip oframe/cframe
+        # Uses alloc instead due to how it is seen in PArIR
         for stmt in node.body.stmts:
             stmt.accept(self)
 
+        # Closes the function scope
         self.symbol_table.exit_scope()
 
+        # Gets the instruction number to jump back to the start of function
         self.instructions[jmp_index - 1] = f"push #PC+{len(self.instructions) - jmp_index + 1}"
 
         if not self.does_block_always_return(node.body):
@@ -571,8 +619,11 @@ class CodeGenerator:
     def visit_block_node(self, node):
         self.symbol_table.enter_scope()
 
+        # Gets the number of local variables in the block
+        # and emits the number of variables
         num_vars = sum(isinstance(stmt, ASTVariableDeclNode) for stmt in node.stmts)
         self.emit(f"push {num_vars}")
+        # Opens and closes frame for the block
         self.emit("oframe")
 
         for stmt in node.stmts:
@@ -586,18 +637,19 @@ class CodeGenerator:
         self.emit(".main")
         self.emit("push 4")
         self.emit("jmp")
+        # Jumps over halt
         self.emit("halt")
 
-
-        # Emit code for .main logic
+        # Emits code for .main logic
         self.symbol_table.enter_scope()
-        # Emit stack frame setup for main block
+        # Emits stack frame setup for main block
         num_main_vars = 0
+        # Gets the number of global variables in the main block
         for stmt in node.stmts:
             if isinstance(stmt, ASTVariableDeclNode) or isinstance(stmt, ASTFunctionDeclNode):
                 num_main_vars += 1
             elif isinstance(stmt, ASTArrayDeclNode):
-                # account for array reference slot
+                # Accounts for array reference slot
                 if stmt.size_expr:
                     if isinstance(stmt.size_expr, ASTIntegerNode):
                         num_main_vars += int(stmt.size_expr.value)
@@ -613,6 +665,7 @@ class CodeGenerator:
 
         self.emit("cframe")
         self.symbol_table.exit_scope()
+        # Finishes the program
         self.emit("halt")
 
     

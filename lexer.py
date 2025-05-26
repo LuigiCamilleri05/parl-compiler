@@ -436,11 +436,12 @@ class Lexer:
 
         # Loop which finds the next token and lexeme and prints the type, lexeme, it's length and the index
         # Until the end of the input is reached
+        print ("First TOKEN: \n Type:", token.type, "\n lexeme:", lexeme, "\n Index: ", src_program_idx)
         while (token != TokenType.end):  
             src_program_idx = src_program_idx + len(lexeme)    
             token, lexeme = Lexer.NextToken(src_program_str, src_program_idx)
             tokens_list.append(token)
-            print ("Nxt TOKEN: ", token.type, " ", lexeme, "(", len(lexeme), ")  => IDX: ", src_program_idx)
+            print ("Next TOKEN:\n Type:", token.type, "\n Lexeme:", lexeme, "\n Index: ", src_program_idx)
             if (token.type == TokenType.error):
                 break; 
             if (token.type == TokenType.end):
