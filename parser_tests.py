@@ -17,6 +17,12 @@ test_inputs = [
     # Unary minus
     "let x : int = -5;",
 
+    # Multiple unary operators chained
+    """
+    let val : int = - -5;
+    """,
+
+
     # Unary not
     "let b : bool = not false;",
 
@@ -25,12 +31,6 @@ test_inputs = [
 
     # Arithmetic with type casting
     "let z : float = (5 + 3) as float;",
-
-    # Array declaration with fixed size and one value
-    "let arr : int[3] = [1];",
-
-    # Array declaration with inferred size
-    "let arr : int[] = [1, 2, 3];",
 
     # PadWidth and PadHeight usage
     "let w : int = __width;",
@@ -89,13 +89,6 @@ test_inputs = [
     }
     """,
 
-    # Function declaration with array parameter
-    """
-    fun sum(arr : int[3]) -> int {
-        return arr[0] + arr[1];
-    }
-    """,
-
     # Function call
     """
     let result : int = add(1, 2);
@@ -108,6 +101,19 @@ test_inputs = [
             let x : int = 2;
             return x;
         }
+    }
+    """,
+     # Function with no parameters
+    """
+    fun nop() -> int {
+        return 1;
+    }
+    """,
+    
+    # A function declaration missing the '->' and return type 
+    """
+    fun brokenFunc(a : int) {
+        return a;
     }
     """,
 
@@ -129,9 +135,6 @@ test_inputs = [
     # __clear with expression
     "__clear 5;",
 
-    # return statement
-    "return 42;",
-
     # Nested blocks
     """
     {
@@ -149,24 +152,12 @@ test_inputs = [
     # Edge case: invalid token
     "let x : int = @;",
 
-    # Function with no parameters
-    """
-    fun nop() -> int {
-        return 1;
-    }
-    """,
+   
 
     # A variable cast to another type
     """
     let x : int = 5;
     let y : float = x as float;
-    """,
-
-    # A function declaration missing the '->' and return type 
-    """
-    fun brokenFunc(a : int) {
-        return a;
-    }
     """,
 
     # An empty block 
@@ -175,34 +166,28 @@ test_inputs = [
     }
     """,
 
-    # A function with a array returned with literal values (Error expected)
-    """
-    fun getNums() -> int[3] {
-        return [1, 2, 3];
-    }
-    """,
-
-    # A nested function call
-    """
-    fun double(a : int) -> int {
-        return a + a;
-    }
-    let result : int = double(1 + 2);
-    """,
-
     # A cast in an arithmetic expression (Error expected)
     """
     let a : float = (5 + 3) as float * 2.0;
     """,
 
-    # Multiple unary operators chained
-    """
-    let val : int = - -5;
-    """,
+    # Array declaration with fixed size and one value
+    "let arr : int[3] = [1];",
 
-    # A variable with an identifier that resembles a keyword
+    # Array declaration with inferred size
+    "let arr : int[] = [1, 2, 3];",
+
+     # Function declaration with array parameter
     """
-    let notnot : bool = true;
+    fun sum(arr : int[3]) -> int {
+        return arr[0] + arr[1];
+    }
+    """,
+    # A function with a array returned with literal values (Error expected)
+    """
+    fun getNums() -> int[3] {
+        return [1, 2, 3];
+    }
     """,
 ]
 

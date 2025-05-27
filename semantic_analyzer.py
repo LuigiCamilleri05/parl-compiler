@@ -1,5 +1,5 @@
 # astnodes used in various places to check types
-from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode, ASTVariableDeclNode, ASTFunctionDeclNode, ASTArrayDeclNode, ASTIntegerNode, ASTForNode
+from astnodes import ASTIfNode, ASTRtrnNode, ASTWhileNode, ASTBlockNode, ASTArrayDeclNode, ASTIntegerNode, ASTForNode
 # Used for declarations, lookups, and scope management
 from symbol_table import SymbolTable
 
@@ -38,28 +38,6 @@ class SemanticAnalyzer:
                 
         # If loop finishes and nothing is returned, return False        
         return False
-    
-    # This method counts the number of local variables in a block by declarations
-    # It goes recursively through the block's statements into nested blocks if needed
-    def count_local_vars(self, block):
-        count = 0
-        for stmt in block.stmts:
-            if isinstance(stmt, ASTVariableDeclNode):
-                count += 1
-            elif isinstance(stmt, ASTArrayDeclNode):
-                if stmt.size_expr and isinstance(stmt.size_expr, ASTIntegerNode):
-                    count += int(stmt.size_expr.value)
-                else:
-                    count += len(stmt.values)
-            elif isinstance(stmt, ASTBlockNode):
-                count += self.count_local_vars(stmt)
-            elif isinstance(stmt, ASTIfNode):
-                count += self.count_local_vars(stmt.then_block)
-                if stmt.else_block:
-                    count += self.count_local_vars(stmt.else_block)
-            elif isinstance(stmt, ASTWhileNode) or isinstance(stmt, ASTForNode):
-                count += self.count_local_vars(stmt.body)
-        return count
     
     # Visitor methods below implement type-checking rules for AST node types
 

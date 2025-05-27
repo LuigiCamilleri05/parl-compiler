@@ -492,7 +492,44 @@ test_programs = [
         offset = offset + 1;
         __delay 10; // Delay to make the movement visible
     }
+    """,
+
+    "let x : int = true;",  # Assigning a boolean to an integer variable (type mismatch)
+    "x = 5;",  # Using a variable before it is declared
+    # Redeclaring a variable in the same scope
+    """ 
+    let x : float = 2.5; 
+    let x : float = 3.1; 
+    """,  
+    # Function with no return on any path
+    """ 
+    fun test() -> int { 
+            let x : int = 5; 
+    } 
+    """,  
+    # Function returning wrong type (bool instead of int)
+    """ 
+    fun test() -> int {
+        return true;
+    } 
+    """,  
+    # Return statement only on one path
     """
+    fun test() -> int {
+        if (true) {
+            return 1; 
+        } 
+    } 
+    """,  
+    # Function declared inside non-global scope
+    """ 
+    { 
+        fun inner() -> int {
+            return 2;
+        }
+    } 
+    """,  
+    "let arr : int[3] = [1, 2, false];",  # Array element type mismatch (string instead of int)
 
 ]
 
@@ -504,6 +541,6 @@ for i, code in enumerate(test_programs):
         parser.Parse()
         analyzer = SemanticAnalyzer()
         parser.ASTroot.accept(analyzer)
-        print("✅ Semantic check passed.")
+        print("Semantic check passed.")
     except Exception as e:
-        print(f"❌ Semantic error: {e}")
+        print(f"Semantic error: {e}")

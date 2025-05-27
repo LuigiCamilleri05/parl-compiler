@@ -297,7 +297,7 @@ class PrintNodesVisitor():
 
     def visit_pad_width_node(self, pad_width_node):
         self.node_count += 1
-        print('\t' * self.tab_count, "Pad Width value")
+        print('\t' * self.tab_count, "Pad Width")
 
     def visit_pad_height_node(self, pad_height_node):
         self.node_count += 1
