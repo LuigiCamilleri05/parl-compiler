@@ -315,7 +315,7 @@ class CodeGenerator:
             # Index expression must be an integer
             if idx_type != "int":
                 raise Exception("Type Error: Array index must be an integer")
-            # Pushes the index expression if suppresss_emit is not set
+            # Pushes the index expression if suppress_emit is not set
             if not getattr(self, "suppress_emit", False): 
                 self.emit(f"push +[{index}:{access_level}]")           
             return var_type[:-2]          

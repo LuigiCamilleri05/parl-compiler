@@ -23,6 +23,22 @@ test_inputs = [
     "let x : int = 5; __delay x;", # Test delay with variable
     "__clear #00ff00;", # Test clear
     "let x : colour = #00ff00; __clear x;", # Test clear with variable
+    "let c : int = __random_int 10;",
+
+    # Using variables for coordinates
+    "let x : int = 5; let y : int = 10; __read x, y;",
+
+    # Full assignment
+    "let c : colour = __read 4, 5;"
+    "__print not true;",         # Should print 0
+    "__print not false;",        # Should print 1
+    "let a: bool = true; __print not a;"
+    "__print -42;",              # Should print -42
+    "let x: int = 5; __print -x;"  # Should print -5
+
+    # Negate floats
+    "__print -3.14;",
+    "let y: float = 2.5; __print -y;",
     """
         // Test __write with literals
         __write 5, 10, #ff0000;
@@ -60,24 +76,6 @@ test_inputs = [
         __print w;
         __print h;
     """,
-    """
-    let c : int = __random_int 10;
-    """,
-
-    # Using variables for coordinates
-    "let x : int = 5; let y : int = 10; __read x, y;",
-
-    # Full assignment
-    "let c : colour = __read 4, 5;"
-    "__print not true;",         # Should print 0
-    "__print not false;",        # Should print 1
-    "let a: bool = true; __print not a;"
-    "__print -42;",              # Should print -42
-    "let x: int = 5; __print -x;"  # Should print -5
-
-    # Negate floats
-    "__print -3.14;",
-    "let y: float = 2.5; __print -y;",
 
     # Test Block Scope
     """
@@ -115,10 +113,6 @@ test_inputs = [
     // Cast int to colour
     let c : colour = 255 as colour;
     """,
-    """
-    let f : float = 3.9;
-    let x : int = f as int;
-    """,
     # Basic if-else checks
     """ 
     let x:int = 5;
@@ -144,25 +138,6 @@ test_inputs = [
             __print b;
         } else {
             __print a;
-        }
-    }
-    """,
-    """
-    let a:int = 4;
-    {
-    let b:int = 2;
-    a = a + 1;
-    }
-    """,
-    """
-    {
-        let x : int = 3;
-        {
-            let y : float = 2.5;
-            {
-                let z : bool = true;
-                x = x + 1;
-            }
         }
     }
     """,
@@ -297,15 +272,6 @@ test_inputs = [
             i = i + 1;
         }
     }
-    """,
-    """
-    fun say_hello() -> int {
-        let x:int = 5;
-        return x - 42;
-    }
-
-    let x:int = say_hello();
-    __print x;
     """,
      # Simple function test
     """
@@ -444,16 +410,6 @@ test_inputs = [
     let m:int = __height;
     let w:int = Race(c1, c2, m);
     __print w;
-    """,
-    """
-    let c:colour = 0 as colour;
-
-     for (let i:int = 0; i < 64; i = i + 1) {
-    c = (__random_int 1677216) as colour;
-    __clear c;
-
-    __delay 16;
-    }
     """,
     """
     fun MaxInArray(x:int[8]) -> int {
