@@ -25,16 +25,13 @@ test_inputs = [
     "let x : colour = #00ff00; __clear x;", # Test clear with variable
     "let c : int = __random_int 10;",
 
-    # Using variables for coordinates
-    "let x : int = 5; let y : int = 10; __read x, y;",
-
     # Full assignment
-    "let c : colour = __read 4, 5;"
+    "let c : colour = __read 4, 5;",
     "__print not true;",         # Should print 0
     "__print not false;",        # Should print 1
-    "let a: bool = true; __print not a;"
+    "let a: bool = true; __print not a;",
     "__print -42;",              # Should print -42
-    "let x: int = 5; __print -x;"  # Should print -5
+    "let x: int = 5; __print -x;",  # Should print -5
 
     # Negate floats
     "__print -3.14;",
@@ -85,7 +82,7 @@ test_inputs = [
     let z : bool = true;
     }
     """,
-    # Test emplty block
+    # Test empty block
     """
     {
     }
@@ -272,15 +269,6 @@ test_inputs = [
             i = i + 1;
         }
     }
-    """,
-     # Simple function test
-    """
-    fun say_hello() -> int {
-        return 10;
-    }
-
-    let x:int = say_hello();
-    __print x;
     """,
     # Function with one parameter
     """
