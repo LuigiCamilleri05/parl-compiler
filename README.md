@@ -40,24 +40,20 @@ cd parl-compiler
 ```
 
 ### 2. Run Tests
-To see the functionality of each compiler stage:
-
+To see the functionality of each compiler stage run the following files:
+```bash
 python lexer_tests.py
+```
+```bash
 python parser_tests.py
+```
+```bash
 python semantic_tests.py
-
+```
+```bash code_generator_test
+python
+```
 💡 Note: The code generator produces PArIR for a virtual machine tied to a simulator that is not publicly accessible.
-
-🧠 Notes
-Robust error handling is included at the lexical, syntactic, and semantic levels.
-
-The language supports:
-
-Primitive types: int, float, bool, colour
-
-Arrays, functions, conditionals, loops
-
-Built-in I/O commands like __print, __write, __delay, etc.
 
 👨‍💻 Author
 Luigi Camilleri
