@@ -50,8 +50,8 @@ python parser_tests.py
 ```bash
 python semantic_tests.py
 ```
-```bash code_generator_test
-python
+```bash 
+python code_generator_test
 ```
 💡 Note: The code generator produces PArIR for a virtual machine tied to a simulator that is not publicly accessible.
 
