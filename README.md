@@ -9,6 +9,7 @@ Developed as part of the **CPS2000 - Compiler Theory and Practice** course at th
 
 ## 📁 Project Structure
 
+```bash
 ├── astnodes.py # AST node definitions
 ├── code_generator.py # PArIR code generation from AST
 ├── code_generator_test.py # Tests for the code generator
@@ -20,7 +21,7 @@ Developed as part of the **CPS2000 - Compiler Theory and Practice** course at th
 ├── semantic_tests.py # Tests for semantic analysis
 ├── symbol_table.py # Symbol table with scope management
 └── README.md # Setup instructions and project info
-
+```
 ---
 
 ## 🧪 Requirements
@@ -38,7 +39,7 @@ git clone https://github.com/your-username/parl-compiler.git
 cd parl-compiler
 ```
 
-2. Run Tests
+### 2. Run Tests
 To see the functionality of each compiler stage:
 
 python lexer_tests.py
