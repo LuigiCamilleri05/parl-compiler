@@ -3,6 +3,10 @@
 This project implements a compiler for an **imaginary programming language called PArL**, which compiles into a low-level intermediate language named **PArIR**, designed for a custom stack-based virtual machine.
 It covers **lexical analysis**, **parsing**, **semantic analysis**, and **intermediate code generation (PArIR)** targeting a stack-based virtual machine.
 
+The PArL language is based on the following EBNF grammar:  
+![PArL EBNF](https://github.com/user-attachments/assets/3662a8f5-87d4-48d7-8873-9a451b301172)
+
+
 Developed as part of the **CPS2000 - Compiler Theory and Practice** course at the University of Malta.
 
 ---
