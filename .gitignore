@@ -1,0 +1,11 @@
+# Bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code settings
+.vscode/
+
+# Optional: OS-specific junk
+.DS_Store
+Thumbs.db
