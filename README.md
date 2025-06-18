@@ -21,10 +21,6 @@ Developed as part of the **CPS2000 - Compiler Theory and Practice** course at th
 ├── symbol_table.py # Symbol table with scope management
 └── README.md # Setup instructions and project info
 
-yaml
-Copy
-Edit
-
 ---
 
 ## 🧪 Requirements
@@ -40,15 +36,15 @@ Edit
 ```bash
 git clone https://github.com/your-username/parl-compiler.git
 cd parl-compiler
+```
+
 2. Run Tests
 To see the functionality of each compiler stage:
 
-bash
-Copy
-Edit
 python lexer_tests.py
 python parser_tests.py
 python semantic_tests.py
+
 💡 Note: The code generator produces PArIR for a virtual machine tied to a simulator that is not publicly accessible.
 
 🧠 Notes
@@ -64,4 +60,3 @@ Built-in I/O commands like __print, __write, __delay, etc.
 
 👨‍💻 Author
 Luigi Camilleri
-University of Malta – CPS2000 (2024/2025)
